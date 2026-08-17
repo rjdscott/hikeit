@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import xp44 from './data/xp44.json'
 import type { State } from './state'
-import type { BoatJson, CrewPoint } from './physics/types'
+import type { BoatJson, CrewPoint, Posture } from './physics/types'
 import { DEG } from './physics/types'
 import { boatSpeed, resolveBoat } from './physics/boat'
 import { combinedCg, crewMoment, crewPositions, rmCrew, rmHull } from './physics/stability'
@@ -31,6 +31,9 @@ export interface Derived {
   coeffs: ReturnType<typeof sailCoeffs>
   perCrew: { id: number; name: string; m: number; y: number; z: number; moment: number }[]
   cg: ReturnType<typeof combinedCg>
+  /** What-if: every rail crew in each posture (same wind/trim). */
+  postures: Record<Posture, { rmCrew: number; phiDeg: number; overpowered: boolean; freeWind: number | null }>
+  railCount: number
 }
 
 /** Pure compute pipeline from state → everything the UI shows. */
@@ -60,6 +63,15 @@ export function derive(s: State): Derived {
   const phi = eq.phi
   const perCrew = crewPts.map((p) => ({ ...p, moment: crewMoment(p, phi, boat.zG, s.zPenalty) }))
   const rmHullEq = rmHull(boat, phi), rmCrewEq = rmCrew(crewPts, phi, boat.zG, s.zPenalty)
+  const railCount = s.crew.filter((c) => boat.slotById[c.slot]?.kind === 'rail').length
+  const postures = Object.fromEntries((['sit', 'legs', 'hike'] as Posture[]).map((po) => {
+    const pts = crewPositions(s.crew.map((c) => (boat.slotById[c.slot]?.kind === 'rail' ? { ...c, posture: po } : c)), boat.slotById)
+    const pm = { boat, crew: pts, wind, flat: trim.flat, zPenalty: s.zPenalty }
+    const e = equilibrium(pm)
+    const sw = windSweep({ boat, crew: pts, flat: trim.flat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)
+    const t = twsAtHeel(sw, s.targetHeel * DEG)
+    return [po, { rmCrew: rmCrew(pts, e.phi, boat.zG, s.zPenalty), phiDeg: e.phi / DEG, overpowered: e.overpowered, freeWind: t !== null && tb !== null ? t - tb : null }]
+  })) as Derived['postures']
   return {
     boat, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
     curves: cv, eq, phiDeg: phi / DEG, ghost, sweep, sweepBase,
@@ -68,7 +80,7 @@ export function derive(s: State): Derived {
     heelForceEq: heelForce(boat, wind, trim.flat, phi), driveEq: driveForce(boat, wind, trim.flat, phi),
     arm: heelingArm(boat, trim.flat),
     coeffs: sailCoeffs(boat.sails, boat.area, boat.hEff, wind.awa, trim.flat, boat.chScale),
-    perCrew, cg: combinedCg(boat, crewPts),
+    perCrew, cg: combinedCg(boat, crewPts), postures, railCount,
   }
 }
 

@@ -22,6 +22,7 @@ export type Action =
   | { type: 'moveCrew'; id: number; slot: string }
   | { type: 'setCrew'; id: number; patch: Partial<Crew> }
   | { type: 'preset'; name: PresetName }
+  | { type: 'railPosture'; posture: Posture; railSlots: Set<string> }
   | { type: 'lesson'; step: number | null; patch?: Partial<State> }
   | { type: 'reset' }
 
@@ -41,7 +42,7 @@ export const presets = {
 export type PresetName = keyof typeof presets
 
 export const initialState = (): State => ({
-  tws: 12,
+  tws: 10,
   twa: 40,
   flat: 1,
   autoTrim: false,
@@ -72,6 +73,8 @@ export function reducer(s: State, a: Action): State {
     }
     case 'setCrew':
       return { ...s, crew: s.crew.map((c) => (c.id === a.id ? { ...c, ...a.patch } : c)) }
+    case 'railPosture':
+      return { ...s, prevCrew: s.crew, crew: s.crew.map((c) => (a.railSlots.has(c.slot) ? { ...c, posture: a.posture } : c)) }
     case 'preset':
       return { ...s, prevCrew: s.crew, crew: s.crew.map((c, i) => ({ ...c, ...presets[a.name](i) })) }
     case 'lesson':

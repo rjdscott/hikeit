@@ -10,6 +10,7 @@ import Controls from './ui/Controls'
 import { CrewTable, Stats } from './ui/Readouts'
 import Advanced from './ui/Advanced'
 import Lesson from './ui/Lesson'
+import PosturePanel from './ui/Posture'
 
 const Equations = lazy(() => import('./ui/Equations'))
 const SLOTS = resolveBoat(BOAT_JSON, 'upwind').slotById
@@ -36,6 +37,8 @@ export default function App() {
   const share = async () => {
     try { await navigator.clipboard.writeText(location.href); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* ignore */ }
   }
+  const railCrew = s.crew.filter((c) => d.boat.slotById[c.slot]?.kind === 'rail' && d.boat.slotById[c.slot].side === 'w')
+  const railPosture = railCrew.length ? railCrew.map((c) => c.posture).sort((a, b) => railCrew.filter((c) => c.posture === b).length - railCrew.filter((c) => c.posture === a).length)[0] : null
   const startLesson = () => dispatch({ type: 'lesson', step: 0, patch: LESSONS[0].patch(s) })
 
   return (
@@ -61,9 +64,10 @@ export default function App() {
         </section>
         <section className="panel area-section">
           <div className="panel-head"><h2>Stern view at equilibrium</h2><span className="hint">two couples: weight/buoyancy vs sail/keel</span></div>
-          <HeelSection d={d} hover={hover} />
+          <HeelSection d={d} hover={hover} railPosture={railPosture} />
         </section>
         <section className="panel area-stats"><Stats d={d} s={s} /></section>
+        <section className="panel area-posture"><PosturePanel s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-controls"><Controls s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-readouts"><CrewTable s={s} d={d} hover={hover} onHover={setHover} dispatch={dispatch} /></section>
         <section className="panel area-moment">

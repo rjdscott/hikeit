@@ -3,10 +3,44 @@ import type { Derived } from '../model'
 import { DEG, G } from '../physics/types'
 import { fmt } from './svg'
 
-interface Props { d: Derived; hover: number | null }
+interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null }
+
+/** Stick figure of a rail crew member at the windward deck edge, boat frame (y outboard+, z up). */
+function Figure({ posture, y0, z0 }: { posture: 'sit' | 'legs' | 'hike'; y0: number; z0: number }) {
+  const st = { stroke: 'var(--c-crew)', strokeWidth: 0.11, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' }
+  if (posture === 'sit') {
+    // bum inboard of the rail, feet on deck, torso upright
+    const b = { y: y0 - 0.35, z: z0 }
+    return (
+      <g>
+        <path d={`M${b.y},${b.z} L${b.y - 0.55},${b.z + 0.25} L${b.y - 0.75},${b.z}`} {...st} />
+        <path d={`M${b.y},${b.z} L${b.y - 0.05},${b.z + 0.7}`} {...st} />
+        <circle cx={b.y - 0.06} cy={b.z + 0.88} r={0.15} fill="var(--c-crew)" />
+      </g>
+    )
+  }
+  const b = { y: y0 - 0.02, z: z0 } // bum on the deck edge
+  const legs = `M${b.y},${b.z} L${b.y + 0.42},${b.z + 0.22} L${b.y + 0.5},${b.z - 0.32}`
+  if (posture === 'legs') {
+    return (
+      <g>
+        <path d={legs} {...st} />
+        <path d={`M${b.y},${b.z} L${b.y + 0.02},${b.z + 0.7}`} {...st} />
+        <circle cx={b.y + 0.02} cy={b.z + 0.88} r={0.15} fill="var(--c-crew)" />
+      </g>
+    )
+  }
+  return (
+    <g>
+      <path d={legs} {...st} />
+      <path d={`M${b.y},${b.z} L${b.y + 0.62},${b.z + 0.42}`} {...st} />
+      <circle cx={b.y + 0.76} cy={b.z + 0.55} r={0.15} fill="var(--c-crew)" />
+    </g>
+  )
+}
 
 /** Stern view: hull section heeled to equilibrium, with the two force couples that fight each other. */
-export default function HeelSection({ d, hover }: Props) {
+export default function HeelSection({ d, hover, railPosture }: Props) {
   const { boat, phiDeg, crewPts, cg, eq } = d
   const phi = eq.phi
   const hull = boat.json.hull
@@ -64,10 +98,11 @@ export default function HeelSection({ d, hover }: Props) {
             {/* keel + bulb */}
             <path d={`M-0.09,${k.rootZ} L0.09,${k.rootZ} L0.06,${k.tipZ + 0.1} L-0.06,${k.tipZ + 0.1} Z`} fill="var(--c-hull)" />
             <ellipse cx={0} cy={k.tipZ + k.bulbHeight / 2} rx={0.24} ry={k.bulbHeight / 2} fill="var(--c-hull)" />
-            {/* crew */}
+            {/* crew CG points + one figure showing the rail posture */}
             {crewPts.map((p) => (
-              <circle key={p.id} cx={p.y} cy={p.z} r={hover === p.id ? 0.24 : 0.17} fill="var(--c-crew)" stroke="#fff" strokeWidth={0.04} />
+              <circle key={p.id} cx={p.y} cy={p.z} r={hover === p.id ? 0.24 : 0.14} fill="var(--c-crew)" stroke="#fff" strokeWidth={0.04} />
             ))}
+            {railPosture && <Figure posture={railPosture} y0={deckY} z0={deckZ} />}
           </g>
           {/* G (hull only) and G (with crew) */}
           <circle cx={gBoat.x} cy={gBoat.y} r={0.11} fill="none" stroke="var(--c-hull)" strokeWidth={0.04} />
@@ -76,7 +111,7 @@ export default function HeelSection({ d, hover }: Props) {
           <text x={gTot.x + 0.22} y={gTot.y - 0.15} className="ml strong" fontSize={0.34} fill="var(--c-hull)">G</text>
           {/* weight ↓ from G, buoyancy ↑ from B */}
           <line x1={gTot.x} y1={gTot.y} x2={gTot.x} y2={gTot.y + fixed} stroke="var(--c-hull)" strokeWidth={0.07} markerEnd="url(#ah-hull)" />
-          <text x={gTot.x - 0.22} y={gTot.y + fixed + 0.32} className="ml num" fontSize={0.32} textAnchor="end" fill="var(--c-hull)">Δg {fmt((cg.total * G) / 1e3, 0)} kN</text>
+          <text x={gTot.x + 0.22} y={gTot.y + fixed - 0.05} className="ml num" fontSize={0.32} fill="var(--c-hull)">Δg {fmt((cg.total * G) / 1e3, 0)} kN</text>
           <circle cx={B.x} cy={B.y} r={0.11} fill="var(--c-buoy)" />
           <text x={B.x + 0.2} y={B.y + 0.42} className="ml strong" fontSize={0.34} fill="var(--c-buoy)">B</text>
           <line x1={B.x} y1={B.y} x2={B.x} y2={B.y - fixed} stroke="var(--c-buoy)" strokeWidth={0.07} markerEnd="url(#ah-buoy)" />
@@ -88,21 +123,21 @@ export default function HeelSection({ d, hover }: Props) {
           {/* sail force at CE (leeward), hydro force at CLR (windward) */}
           <circle cx={ce.x} cy={ce.y} r={0.1} fill="var(--c-sail)" />
           <line x1={ce.x} y1={ce.y} x2={ce.x + fixedS} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
-          <text x={ce.x + 0.15} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)">F_H {fmt(d.heelForceEq / 1e3, 1)} kN</text>
+          <text x={ce.x + 0.25} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)">F_H {fmt(d.heelForceEq / 1e3, 1)} kN</text>
           <text x={ce.x - 0.2} y={ce.y + 0.12} className="ml" fontSize={0.3} textAnchor="end" fill="var(--c-sail)">CE</text>
           <circle cx={clr.x} cy={clr.y} r={0.1} fill="var(--c-sail)" />
           <line x1={clr.x} y1={clr.y} x2={clr.x - fixedS} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
           <text x={clr.x - fixedS - 0.15} y={clr.y + 0.12} className="ml" fontSize={0.3} textAnchor="end" fill="var(--c-sail)">keel</text>
           {/* heeling arm dimension */}
-          <line x1={ce.x} y1={ce.y} x2={5.0} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
-          <line x1={clr.x} y1={clr.y} x2={5.0} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
-          <line x1={4.9} y1={ce.y} x2={4.9} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
-          <text x={4.75} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="end" fill="var(--c-sail)" transform={`rotate(-90 4.75 ${(ce.y + clr.y) / 2})`}>h {fmt(d.arm, 1)} m → HM {fmt(d.hmEq / 1e3, 1)} kN·m</text>
+          <line x1={ce.x} y1={ce.y} x2={5.35} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
+          <line x1={clr.x} y1={clr.y} x2={5.35} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
+          <line x1={5.25} y1={ce.y} x2={5.25} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
+          <text x={5.1} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="end" fill="var(--c-sail)" transform={`rotate(-90 5.1 ${(ce.y + clr.y) / 2})`}>h {fmt(d.arm, 1)} m → HM {fmt(d.hmEq / 1e3, 1)} kN·m</text>
           {/* heel angle arc */}
           <path d={`M0,-2.2 A2.2,2.2 0 0 1 ${2.2 * Math.sin(phi)},${-2.2 * Math.cos(phi)}`} fill="none" stroke="var(--ink)" strokeWidth={0.03} />
           <line x1={0} y1={0} x2={0} y2={-2.4} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
           <line x1={0} y1={0} x2={top.x} y2={top.y} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
-          <text x={2.4 * Math.sin(phi / 2) + 0.15} y={-2.4 * Math.cos(phi / 2)} className="ml strong num" fontSize={0.4}>φ {fmt(phiDeg, 1)}°</text>
+          <text x={2.9 * Math.sin(phi / 2) + 0.15} y={-2.9 * Math.cos(phi / 2)} className="ml strong num" fontSize={0.4}>φ {fmt(phiDeg, 1)}°</text>
           {heavy && <text x={0} y={-10.3} textAnchor="middle" fontSize={0.45} fontWeight={700} fill="var(--c-sail)">OVERPOWERED — no static equilibrium: reef or depower</text>}
           <text x={mastTop.x} y={mastTop.y} className="ml" fontSize={0.28} textAnchor="middle" opacity={0}>{' '}</text>
         </g>

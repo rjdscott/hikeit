@@ -26,7 +26,7 @@ describe('reducer', () => {
     let s = reducer(initialState(), { type: 'setCrew', id: 3, patch: { name: 'Rob', kg: 92 } })
     s = reducer(s, { type: 'patch', patch: { tws: 25 } })
     s = reducer(s, { type: 'reset' })
-    expect(s.tws).toBe(12); expect(s.crew[3].name).toBe('Rob'); expect(s.crew[3].kg).toBe(92)
+    expect(s.tws).toBe(10); expect(s.crew[3].name).toBe('Rob'); expect(s.crew[3].kg).toBe(92)
   })
 })
 
@@ -41,6 +41,6 @@ describe('URL hash', () => {
   })
   it('ignores garbage safely', () => {
     const d = decodeHash('#tws=abc&crew=nope.9,zzz&twa=999', initialState(), boat.slotById)
-    expect(d.tws).toBe(12); expect(d.twa).toBe(180); expect(d.crew[0].slot).toBe(initialState().crew[0].slot)
+    expect(d.tws).toBe(10); expect(d.twa).toBe(180); expect(d.crew[0].slot).toBe(initialState().crew[0].slot)
   })
 })
