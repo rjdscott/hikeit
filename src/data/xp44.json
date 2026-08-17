@@ -1,0 +1,71 @@
+{
+  "name": "X-Yachts Xp 44",
+  "_notes": "Hull/rig from builder + ORC certificates of Xp 44 sisterships (HEART OF GOLD, PHANTOM, XAR, ADRENALINA, ANTELOPE, X-MEN). Stability defaults are class-median cert values; replace rm1/avsDeg (and polar) with your own ORC certificate. Sail coefficient tables are ORC-VPP-style 2-D approximations. All lengths m, masses kg, angles deg, speeds kn.",
+  "hull": {
+    "loa": 13.29,
+    "lwl": 11.89,
+    "beam": 4.07,
+    "draft": 2.3,
+    "dispSailing": 9700,
+    "ballast": 3850,
+    "freeboard": 1.2,
+    "section": [[2.03, 0.95], [2.0, 0.45], [1.88, 0.0], [1.6, -0.3], [1.1, -0.52], [0.5, -0.6], [0.0, -0.62]],
+    "keel": { "rootZ": -0.62, "tipZ": -2.3, "chordRoot": 1.5, "chordTip": 0.8, "bulbLength": 1.7, "bulbHeight": 0.32 }
+  },
+  "stability": { "rm1": 260, "avsDeg": 120, "n": 1.6, "zG": -0.1 },
+  "rig": { "P": 17.405, "E": 5.94, "IG": 18.215, "J": 4.983, "BAS": 1.775, "ISP": 19.18, "SPL": 5.863, "mastX": 5.3 },
+  "deck": {
+    "outline": [[0, 0], [0.6, 0.5], [1.6, 1.05], [3.0, 1.55], [4.5, 1.88], [6.0, 2.01], [7.5, 2.035], [9.0, 2.0], [10.5, 1.92], [12.0, 1.78], [13.29, 1.6]],
+    "cockpit": { "from": 9.4, "to": 12.7, "halfWidth": 1.1 },
+    "coachroof": { "from": 5.6, "to": 9.2, "halfWidth": 1.25 },
+    "rail": { "fromMast": 0.4, "count": 8, "spacing": 0.5, "inset": 0.35, "z": 1.4 },
+    "slots": [
+      { "id": "helm", "label": "Helm", "x": 11.7, "yFrac": 0.7, "z": 1.35, "side": "both" },
+      { "id": "trim", "label": "Main trim", "x": 10.6, "yFrac": 0.5, "z": 1.3, "side": "both" },
+      { "id": "pit", "label": "Pit", "x": 9.7, "y": 0.4, "z": 1.35, "side": "both" },
+      { "id": "bow", "label": "Bow", "x": 2.4, "y": 0, "z": 1.35, "side": "centre" },
+      { "id": "below", "label": "Below decks", "x": 7.6, "y": 0, "z": 0.4, "side": "centre" }
+    ]
+  },
+  "sails": [
+    {
+      "id": "main", "name": "Mainsail", "type": "main", "area": 63.9, "ce": 9.9,
+      "awa": [0, 7, 9, 12, 28, 60, 90, 120, 150, 180],
+      "cl": [0, 0.862, 1.052, 1.164, 1.427, 1.239, 1.125, 0.838, 0.296, -0.112],
+      "cd": [0.043, 0.043, 0.043, 0.043, 0.043, 0.113, 0.384, 0.969, 1.316, 1.346]
+    },
+    {
+      "id": "jib", "name": "Jib 106%", "type": "jib", "area": 48.2, "ce": 8.4,
+      "awa": [7, 15, 20, 27, 50, 60, 100, 150, 180],
+      "cl": [0, 1.0, 1.375, 1.45, 1.43, 1.25, 0.4, 0, -0.1],
+      "cd": [0.05, 0.023, 0.031, 0.037, 0.25, 0.35, 0.73, 0.95, 0.9]
+    },
+    {
+      "id": "code0", "name": "Code 0", "type": "code0", "area": 103.8, "ce": 8.6,
+      "awa": [28, 41, 50, 60, 67, 75, 100, 115, 150, 180],
+      "cl": [0.85, 1.05, 1.2, 1.25, 1.15, 1.1, 0.75, 0.5, 0.2, 0],
+      "cd": [0.15, 0.2, 0.3, 0.4, 0.6, 0.7, 0.85, 0.9, 0.95, 0.95]
+    }
+  ],
+  "sailModes": [
+    { "id": "upwind", "label": "Main + Jib", "sails": ["main", "jib"], "twa": [35, 110] },
+    { "id": "code0", "label": "Main + Code 0", "sails": ["main", "code0"], "twa": [60, 120] }
+  ],
+  "polar": {
+    "_notes": "Seed polar (approx. for a 44 ft racer-cruiser). Replace with ORC VPP polar: bsp[twsIndex][twaIndex] in knots.",
+    "tws": [4, 6, 8, 10, 12, 14, 16, 20, 25, 30],
+    "twa": [35, 40, 45, 52, 60, 75, 90, 110, 120],
+    "bsp": [
+      [3.4, 3.8, 4.2, 4.6, 4.9, 5.2, 5.1, 4.6, 4.2],
+      [4.6, 5.2, 5.6, 6.0, 6.3, 6.6, 6.5, 6.0, 5.6],
+      [5.5, 6.1, 6.5, 6.9, 7.2, 7.5, 7.5, 7.0, 6.6],
+      [6.1, 6.7, 7.0, 7.3, 7.6, 8.0, 8.1, 7.8, 7.4],
+      [6.4, 7.0, 7.3, 7.6, 7.9, 8.4, 8.6, 8.4, 8.1],
+      [6.6, 7.2, 7.5, 7.8, 8.1, 8.7, 9.0, 8.9, 8.7],
+      [6.7, 7.3, 7.6, 7.9, 8.3, 9.0, 9.4, 9.4, 9.3],
+      [6.8, 7.4, 7.7, 8.0, 8.5, 9.4, 10.0, 10.3, 10.3],
+      [6.8, 7.4, 7.7, 8.0, 8.6, 9.6, 10.5, 11.2, 11.3],
+      [6.7, 7.3, 7.6, 8.0, 8.6, 9.7, 10.8, 11.8, 12.0]
+    ]
+  }
+}
