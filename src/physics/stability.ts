@@ -9,12 +9,17 @@ export function gz(phi: number, gm: number, avs: number, n: number): number {
 export const rmHull = (b: Boat, phi: number) => b.disp * G * gz(phi, b.gm, b.avs, b.n)
 
 /** Heel angle of maximum GZ (rad), by coarse scan then refinement. */
+const gzMaxCache = new Map<string, number>()
 export function phiGzMax(gm: number, avs: number, n: number): number {
+  const key = `${gm}|${avs}|${n}`
+  const hit = gzMaxCache.get(key)
+  if (hit !== undefined) return hit
   let best = 0, bestV = -Infinity
   for (let p = 0; p <= avs; p += 0.002) {
     const v = gz(p, gm, avs, n)
     if (v > bestV) { bestV = v; best = p }
   }
+  gzMaxCache.set(key, best)
   return best
 }
 

@@ -1,0 +1,75 @@
+import { useMemo } from 'react'
+import xp44 from './data/xp44.json'
+import type { State } from './state'
+import type { BoatJson, CrewPoint } from './physics/types'
+import { DEG } from './physics/types'
+import { boatSpeed, resolveBoat } from './physics/boat'
+import { combinedCg, crewMoment, crewPositions, rmCrew, rmHull } from './physics/stability'
+import { apparentWind, driveForce, heelForce, heelingArm, heelingMoment, sailCoeffs, type Wind } from './physics/aero'
+import { curves, equilibrium, solveFlat, twsAtHeel, windSweep, type Curves, type Equilibrium, type SweepPoint } from './physics/solve'
+
+export const BOAT_JSON = xp44 as unknown as BoatJson
+export const SWEEP_TWS = Array.from({ length: 27 }, (_, i) => 4 + i) // 4..30 kn
+
+export interface Derived {
+  boat: ReturnType<typeof resolveBoat>
+  crewPts: CrewPoint[]
+  wind: Wind
+  flat: number
+  zPenalty: boolean
+  trimLimited: boolean
+  underpowered: boolean
+  curves: Curves
+  eq: Equilibrium
+  phiDeg: number
+  ghost: { curves: Curves; eq: Equilibrium; flat: number } | null
+  sweep: SweepPoint[]
+  sweepBase: SweepPoint[]
+  freeWind: number | null // kn of extra TWS at target heel vs all-inboard baseline
+  rmHullEq: number; rmCrewEq: number; rmTotalEq: number; hmEq: number
+  heelForceEq: number; driveEq: number; arm: number
+  coeffs: ReturnType<typeof sailCoeffs>
+  perCrew: { id: number; name: string; m: number; y: number; z: number; moment: number }[]
+  cg: ReturnType<typeof combinedCg>
+}
+
+/** Pure compute pipeline from state → everything the UI shows. */
+export function derive(s: State): Derived {
+  const boat = resolveBoat(BOAT_JSON, s.sailMode, s.overrides)
+  const crewPts = crewPositions(s.crew, boat.slotById)
+  const windAt = (tws: number) => apparentWind(tws, s.twa, boatSpeed(boat.polar, tws, s.twa))
+  const wind = windAt(s.tws)
+  const base = { boat, crew: crewPts, wind, zPenalty: s.zPenalty }
+  const trim = s.autoTrim ? solveFlat(base, s.targetHeel * DEG) : { flat: s.flat, trimLimited: false, underpowered: false }
+  const m = { ...base, flat: trim.flat }
+  const cv = curves(m)
+  const eq = equilibrium(m)
+  let ghost: Derived['ghost'] = null
+  if (s.prevCrew) {
+    const gp = crewPositions(s.prevCrew, boat.slotById)
+    const gb = { boat, crew: gp, wind, zPenalty: s.zPenalty }
+    const gflat = s.autoTrim ? solveFlat(gb, s.targetHeel * DEG).flat : s.flat
+    const gm = { ...gb, flat: gflat }
+    ghost = { curves: curves(gm), eq: equilibrium(gm), flat: gflat }
+  }
+  const sweepFlat = trim.flat
+  const sweep = windSweep({ boat, crew: crewPts, flat: sweepFlat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)
+  const inboard = crewPts.map((p) => ({ ...p, y: 0, z: 1.3 }))
+  const sweepBase = windSweep({ boat, crew: inboard, flat: sweepFlat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)
+  const ta = twsAtHeel(sweep, s.targetHeel * DEG), tb = twsAtHeel(sweepBase, s.targetHeel * DEG)
+  const phi = eq.phi
+  const perCrew = crewPts.map((p) => ({ ...p, moment: crewMoment(p, phi, boat.zG, s.zPenalty) }))
+  const rmHullEq = rmHull(boat, phi), rmCrewEq = rmCrew(crewPts, phi, boat.zG, s.zPenalty)
+  return {
+    boat, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
+    curves: cv, eq, phiDeg: phi / DEG, ghost, sweep, sweepBase,
+    freeWind: ta !== null && tb !== null ? ta - tb : null,
+    rmHullEq, rmCrewEq, rmTotalEq: rmHullEq + rmCrewEq, hmEq: heelingMoment(boat, wind, trim.flat, phi),
+    heelForceEq: heelForce(boat, wind, trim.flat, phi), driveEq: driveForce(boat, wind, trim.flat, phi),
+    arm: heelingArm(boat, trim.flat),
+    coeffs: sailCoeffs(boat.sails, boat.area, boat.hEff, wind.awa, trim.flat, boat.chScale),
+    perCrew, cg: combinedCg(boat, crewPts),
+  }
+}
+
+export const useDerived = (s: State) => useMemo(() => derive(s), [s])
