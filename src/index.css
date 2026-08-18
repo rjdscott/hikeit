@@ -45,7 +45,9 @@ button { cursor: pointer; }
   "posture posture"
   "moment sweep"
   "eq eq"
+  "glossary glossary"
   "advanced advanced"; }
+.area-glossary { grid-area: glossary; }
 .area-stats { grid-area: stats; }
 .area-posture { grid-area: posture; }
 .grid > * { min-width: 0; }
@@ -62,7 +64,7 @@ button { cursor: pointer; }
   .app { padding: 10px; }
   .mob-hide { display: none; }
   table.tbl input:not([type=number]) { max-width: 6.5em; }
-  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "section" "controls" "compare" "posture" "readouts" "moment" "sweep" "eq" "advanced"; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "section" "controls" "compare" "posture" "readouts" "moment" "sweep" "eq" "glossary" "advanced"; }
 }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; }
@@ -210,3 +212,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
   .minibar span:last-child { display: none; }
 }
 @media (min-width: 520px) and (max-width: 900px) { .minibar span:last-child { display: inline; } }
+
+/* ---- glossary ---- */
+.gloss { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px 28px; margin-top: 10px; }
+.gloss h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 6px 0 4px; }
+.gloss dl { margin: 0; }
+.gloss dl > div { display: grid; grid-template-columns: minmax(120px, 38%) 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 0.86rem; }
+.gloss dt { font-weight: 600; }
+.gloss dd { margin: 0; color: var(--muted); }
+@media (max-width: 480px) { .gloss dl > div { grid-template-columns: 1fr; gap: 2px; } }

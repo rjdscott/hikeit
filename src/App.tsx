@@ -10,6 +10,7 @@ import Controls from './ui/Controls'
 import { CrewList, Stats } from './ui/Readouts'
 import CrewSheet from './ui/CrewSheet'
 import Compare from './ui/Compare'
+import Glossary from './ui/Glossary'
 import PuffPanel, { usePuffCleanup } from './ui/Puff'
 import { derive } from './model'
 import { useMemo } from 'react'
@@ -118,6 +119,7 @@ function App() {
         <section className="panel area-eq">
           <Suspense fallback={<div className="muted small">Loading equations…</div>}><Equations d={d} /></Suspense>
         </section>
+        <section className="panel area-glossary"><Glossary /></section>
         <section className="panel area-advanced"><Advanced s={s} d={d} dispatch={dispatch} /></section>
       </div>
       {selected !== null && s.crew.some((c) => c.id === selected) && (
