@@ -39,11 +39,11 @@ export default function Controls({ s, d, dispatch }: Props) {
           const m = BOAT_JSON.sailModes.find((x) => x.id === id) ?? BOAT_JSON.sailModes[0]
           patch({ sailMode: id, twa: Math.min(m.twa[1], Math.max(m.twa[0], s.twa)), ...(id === AUTO ? { autoTrim: true } : {}) })
         }} aria-label="Sail combination">
-          <option value={AUTO}>Auto — crew changes down to hold {s.targetHeel}°</option>
+          <option value={AUTO}>Auto — change down to hold {s.targetHeel}°</option>
           {BOAT_JSON.sailModes.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
       </div>
-      {s.sailMode === AUTO && <p className="small muted" style={{ marginTop: -4 }}>Flying: <b>{mode.label}</b> — largest combination that holds {s.targetHeel}° with flat ≥ 0.7.</p>}
+      {s.sailMode === AUTO && <p className="small muted" style={{ marginTop: -4 }}>Flying: <b>{mode.label}</b>{s.autoTrim ? ` — the most sail that holds ${s.targetHeel}° with flat ≥ 0.6.` : ' — full sail; auto changes down only when the trimmers hold a target heel (switch it on above).'}</p>}
       <label className="toggle"><input type="checkbox" checked={s.autoTrim} onChange={(e) => patch({ autoTrim: e.target.checked })} /> Trimmers hold a target heel (auto-depower)</label>
       {s.autoTrim
         ? <Range label="Target heel" value={s.targetHeel} min={5} max={35} step={1} unit="°" onChange={(v) => patch({ targetHeel: v })} />

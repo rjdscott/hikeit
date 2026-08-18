@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Derived } from '../model'
 import { POSTURE_LABEL, POSTURE_OFFSET, type Posture, type Slot } from '../physics/types'
 import { crewMoment } from '../physics/stability'
@@ -23,9 +23,17 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
   const p = d.perCrew.find((x) => x.id === id)!
   const slot = d.boat.slotById[c.slot]
   const wRail = slot?.kind === 'rail' && slot.side === 'w'
-  const total = d.perCrew.reduce((a, x) => a + Math.abs(x.moment), 0) || 1
+  const maxAbs = Math.max(1, ...d.perCrew.map((x) => Math.abs(x.moment)))
+  const rootRef = useRef<HTMLDivElement>(null)
+  const openerRef = useRef<Element | null>(null)
   const [kg, setKg] = useState<string | null>(null)
   useEffect(() => setKg(null), [id])
+  // focus management: move focus into the dialog on open, restore to the opener on close
+  useEffect(() => {
+    openerRef.current = document.activeElement
+    rootRef.current?.focus()
+    return () => { (openerRef.current as HTMLElement | null)?.focus?.() }
+  }, [])
   useEffect(() => {
     const k = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     addEventListener('keydown', k); return () => removeEventListener('keydown', k)
@@ -39,7 +47,7 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
   }
   const idx = s.crew.findIndex((x) => x.id === id)
   return (
-    <div className="sheet" role="dialog" aria-label={`${c.name}`}>
+    <div className="sheet" role="dialog" aria-label={`${c.name}`} ref={rootRef} tabIndex={-1}>
       <div className="sheet-head">
         <button className="btn sm" onClick={() => onSelect(s.crew[(idx + s.crew.length - 1) % s.crew.length].id)} aria-label="previous crew">‹</button>
         <span className="avatar">{initials(c.name, c.id)}</span>
@@ -56,7 +64,7 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
       <div className="sheet-now">
         <span><b>{slot?.label}</b>{wRail ? ` · ${POSTURE_LABEL[c.posture]}` : ''} · arm {p.y >= 0 ? '+' : ''}{fmt(p.y, 2)} m</span>
         <span className="num" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)} kN·m</span>
-        <span className="bar"><i style={{ width: `${(100 * Math.abs(p.moment)) / total}%`, background: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)' }} /></span>
+        <span className="bar"><i style={{ width: `${(100 * Math.abs(p.moment)) / maxAbs}%`, background: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)' }} /></span>
       </div>
       {wRail && (
         <div className="seg" role="radiogroup" aria-label="posture">
@@ -65,12 +73,13 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
             return (
               <button key={po} role="radio" aria-checked={c.posture === po} className={c.posture === po ? 'on' : ''} onClick={() => dispatch({ type: 'setCrew', id, patch: { posture: po } })}>
                 <span>{POSTURE_LABEL[po]}</span>
-                <small className="num">+{fmt(POSTURE_OFFSET[po], 1)} m · {dm >= 0 ? '+' : ''}{kNm(dm, 2)}</small>
+                <small className="num">+{fmt(POSTURE_OFFSET[po], 1)} m</small><small className="num">{dm >= 0 ? '+' : ''}{kNm(dm, 2)} kN·m</small>
               </button>
             )
           })}
         </div>
       )}
+      <div className="small muted" style={{ margin: '2px 0 4px' }}>Move to… (⇄ = occupied, tap to swap)</div>
       {GROUPS.map((g) => {
         const slots = d.boat.slots.filter(g.match)
         return (
@@ -81,9 +90,9 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
                 const occ = occupant(sl)
                 const here = sl.id === c.slot
                 return (
-                  <button key={sl.id} className={`btn sm${here ? ' active' : ''}`} onClick={() => !here && dispatch({ type: 'moveCrew', id, slot: sl.id })} title={occ ? `swap with ${occ.name}` : ''}>
+                  <button key={sl.id} className={`btn sm${here ? ' active' : ''}${occ ? ' occupied' : ''}`} onClick={() => !here && dispatch({ type: 'moveCrew', id, slot: sl.id })} aria-label={`${sl.label}${occ ? `, occupied by ${occ.name} — swap` : ''}`}>
                     {sl.kind === 'rail' ? sl.label.replace('Lee rail', 'Lee').replace('Rail ', '') : sl.label}
-                    {occ && <span className="occ">{initials(occ.name, occ.id)}</span>}
+                    {occ && <span className="occ" title={`swap with ${occ.name}`}>⇄ {initials(occ.name, occ.id)}</span>}
                     {MULTI.has(sl.id) && !here && s.crew.some((x) => x.slot === sl.id) && <span className="occ">{s.crew.filter((x) => x.slot === sl.id).length}</span>}
                   </button>
                 )

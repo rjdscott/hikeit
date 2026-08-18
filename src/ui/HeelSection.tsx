@@ -5,10 +5,13 @@ import { fmt } from './svg'
 import { rmCrew, rmHull } from '../physics/stability'
 import { apparentWind, heelForce, heelingMoment } from '../physics/aero'
 import { Figure } from './Figure'
+import { sampleAt, usePuffState } from './Puff'
 
-interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null; dyn?: { phi: number; tws: number } | null }
+interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null }
 
-export default function HeelSection({ d, hover, railPosture, dyn }: Props) {
+export default function HeelSection({ d, hover, railPosture }: Props) {
+  const puff = usePuffState()
+  const dyn = puff ? sampleAt(puff.traj, puff.t) : null
   const { boat, crewPts, cg, eq } = d
   const phi = dyn ? dyn.phi : eq.phi
   const phiDeg = phi / DEG

@@ -1,6 +1,6 @@
 # Sprint 2 — UX taste, dynamics, sail inventory
 
-**Status:** In progress (2026-08-18). Follows the shipped v1 ([plan](2026-08-18-hikeit-implementation-plan.md), [reviews](../reviews/)).
+**Status:** Done (2026-08-18) — shipped; review #3 in docs/reviews. Follows the shipped v1 ([plan](2026-08-18-hikeit-implementation-plan.md), [reviews](../reviews/)).
 
 ## Context
 v1 is live and physically defensible. Rob's feedback: crew movement and the link between a person and their status feels clunky on phones; the lesson should make people *predict*; hiking timing in puffs is the reflex the static model can't teach; the boat is deep keel + carbon rig; headsail changes/reefs are the real depower path.

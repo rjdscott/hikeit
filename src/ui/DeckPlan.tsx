@@ -45,6 +45,7 @@ function layout(crew: Crew[], boat: Boat) {
 export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSelect, onHover, onMove, onPosture }: Props) {
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const vertical = width < 560
+  const reduceMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const gRef = useRef<SVGGElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
   // Chromium ignores touch-action on SVG children: stop the browser claiming crew drags as page scroll (svg itself stays pan-y)
@@ -149,7 +150,7 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
             </>
           ) : (
             <>
-              <text x={mastX + 2.6} y={-2.3} className="ml" fontSize={0.28} textAnchor="middle">windward rail</text>
+              <text x={mastX + 2.6} y={-2.5} className="ml" fontSize={0.28} textAnchor="middle">windward rail</text>
               <text x={mastX + 2.6} y={2.55} className="ml" fontSize={0.28} textAnchor="middle">leeward rail</text>
             </>
           )}
@@ -176,7 +177,12 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
             if (!p) return null
             const live = pos.get(c.id)
             if (live && Math.hypot(live.x - p.x, live.y - p.y) < 0.05) return null
-            return <circle key={`g${c.id}`} cx={p.x} cy={-p.y} r={R - 0.02} fill="none" stroke="var(--c-ghost)" strokeWidth={0.05} strokeDasharray="0.1 0.07" />
+            return (
+              <g key={`g${c.id}`} transform={`translate(${p.x},${-p.y})`} opacity={0.55}>
+                <circle r={R - 0.02} fill="var(--c-ghost)" />
+                <text y={0.02} fontSize={0.2} fill="#fff" fontWeight={700} textAnchor="middle" dominantBaseline="middle" transform={vertical ? 'rotate(-90)' : ''}>A</text>
+              </g>
+            )
           })}
           {/* crew */}
           {crew.map((c) => {
@@ -188,7 +194,7 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
             const isSel = selected === c.id, isHover = hover === c.id
             const initials = /^crew\s*\d+$/i.test(c.name.trim()) ? String(c.id + 1) : (c.name.trim().split(/\s+/).length > 1 ? c.name.trim().split(/\s+/).map((w) => w[0]).join('') : c.name.trim().slice(0, 2)).slice(0, 2).toUpperCase() || String(c.id + 1)
             return (
-              <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} style={{ transform: `translate(${x}px, ${-y}px)`, transition: isDrag ? 'none' : 'transform 220ms cubic-bezier(.2,.8,.2,1)' }}
+              <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} style={{ transform: `translate(${x}px, ${-y}px)`, transition: isDrag || reduceMotion ? 'none' : 'transform 220ms cubic-bezier(.2,.8,.2,1)' }}
                 onPointerDown={onDown(c)} onPointerMove={onMovePtr} onPointerUp={onUp(c)} onPointerCancel={() => setDrag(null)}
                 onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} role="button" tabIndex={0}
                 aria-label={`${c.name}, ${p.slot.label}${rail && p.slot.side === 'w' ? ', ' + POSTURE_LABEL[c.posture] + '. Enter: cycle posture' : ''}${rail ? '. Arrow keys: move along the rail' : ''}. W, L or B: move to windward rail, leeward rail or below`}
@@ -196,7 +202,7 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
                   if (e.metaKey || e.ctrlKey || e.altKey) return
                   const rails = boat.slots.filter((x) => x.kind === 'rail' && x.side === p.slot.side)
                   const idx = rails.findIndex((x) => x.id === c.slot)
-                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (rail && p.slot.side === 'w') onPosture(c.id, NEXT[c.posture]) }
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selected !== c.id) onSelect(c.id); else if (rail && p.slot.side === 'w') onPosture(c.id, NEXT[c.posture]) }
                   else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) onMove(c.id, rails[idx - 1].id) }
                   else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (idx >= 0 && idx < rails.length - 1) onMove(c.id, rails[idx + 1].id) }
                   else if (e.key === 'w' || e.key === 'W') onMove(c.id, 'rail-w-4')

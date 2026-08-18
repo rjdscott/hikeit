@@ -56,8 +56,10 @@ export function derive(s: State): Derived {
   const windFor = (json: typeof BOAT_JSON, _mode: string, tws = s.tws) => { const twa = twaAt(tws); return apparentWind(tws, twa, bspAt0(json.polar, tws, twa)) }
   const slots0 = resolveBoat(BOAT_JSON, BOAT_JSON.sailModes[0].id, s.overrides).slotById
   const crewPts = crewPositions(s.crew, slots0)
+  // auto selection assumes someone is trimming to the target heel; with manual power we fly the biggest ranked combination
+  const biggest = [...BOAT_JSON.sailModes].filter((m) => m.rank !== undefined).sort((a, b) => a.rank! - b.rank!)[0]?.id ?? BOAT_JSON.sailModes[0].id
   const sailModeId = s.sailMode === AUTO
-    ? selectSailMode(BOAT_JSON, (j, m) => windFor(j, m), crewPts, s.targetHeel * DEG, s.zPenalty, s.overrides)
+    ? (s.autoTrim ? selectSailMode(BOAT_JSON, (j, m) => windFor(j, m), crewPts, s.targetHeel * DEG, s.zPenalty, s.overrides) : biggest)
     : s.sailMode
   const boat = resolveBoat(BOAT_JSON, sailModeId, s.overrides)
   const windAt = (tws: number) => windFor(BOAT_JSON, sailModeId, tws)

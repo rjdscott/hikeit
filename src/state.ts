@@ -56,7 +56,7 @@ export const initialState = (): State => ({
   autoTrim: false,
   targetHeel: 20,
   targetAngle: true,
-  sailMode: 'auto',
+  sailMode: 'j1',
   crew: defaultCrew().map((c, i) => ({ ...c, ...presets['Racing: rail sitting'](i) })),
   prevCrew: null,
   zPenalty: true,
@@ -159,7 +159,7 @@ export function loadLocal(base: State): State {
   } catch { return base }
 }
 
-export function clearLocal() { try { localStorage.removeItem(LS_KEY) } catch { /* ignore */ } }
+export function clearLocal() { try { localStorage.removeItem(LS_KEY); localStorage.removeItem('hikeit.quiz.v1') } catch { /* ignore */ } }
 
 export function saveLocal(s: State) {
   try { localStorage.setItem(LS_KEY, JSON.stringify({ crew: s.crew.map((c) => ({ name: c.name, kg: c.kg })) })) } catch { /* ignore */ }

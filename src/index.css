@@ -41,7 +41,6 @@ button { cursor: pointer; }
   "deck section"
   "stats section"
   "controls readouts"
-  "puff puff"
   "compare compare"
   "posture posture"
   "moment sweep"
@@ -63,7 +62,7 @@ button { cursor: pointer; }
   .app { padding: 10px; }
   .mob-hide { display: none; }
   table.tbl input:not([type=number]) { max-width: 6.5em; }
-  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "puff" "compare" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "section" "controls" "compare" "posture" "readouts" "moment" "sweep" "eq" "advanced"; }
 }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; }
@@ -164,7 +163,8 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .sheet-group { margin-top: 8px; }
 .sheet-group .k { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
 .sheet-group .btn { position: relative; padding-right: 8px; }
-.sheet-group .occ { display: inline-grid; place-items: center; min-width: 16px; height: 16px; border-radius: 8px; background: var(--c-crew); color: #fff; font-size: 0.62rem; font-weight: 700; margin-left: 5px; padding: 0 3px; }
+.sheet-group .occ { display: inline-grid; place-items: center; min-width: 16px; height: 16px; border-radius: 8px; background: var(--c-ghost); color: #fff; font-size: 0.62rem; font-weight: 700; margin-left: 5px; padding: 0 4px; }
+.sheet-group .btn.occupied { border-style: dashed; }
 .sheet-group .btn.active .occ { background: #fff; color: var(--ink); }
 .crew-list { list-style: none; margin: 0; padding: 0; }
 .crew-list li { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 10px; align-items: center; padding: 4px 4px; border-bottom: 1px solid var(--line); cursor: pointer; border-radius: 6px; }

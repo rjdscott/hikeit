@@ -8,8 +8,8 @@ export interface RollParams {
   inertia: number // kg·m², roll inertia incl. added mass (rig + keel + hull + entrained water)
   zeta: number // damping ratio (keel + sails ≈ 0.3–0.5)
 }
-/** Roll inertia ≈ Δ·k² with k ≈ 0.6·B/2 … tuned so T_roll ≈ 4 s for the Xp 44 (typical 40–45 ft: 3–5 s). */
-export const defaultRoll = (b: Boat): RollParams => ({ inertia: 6.2 * b.disp, zeta: 0.35 })
+/** Roll inertia I = Δ·k² with roll gyradius k ≈ 0.61·B ≈ 2.5 m (rig, keel bulb and entrained water all sit far from the roll axis) → T_roll ≈ 4 s for the Xp 44 (typical 40–45 ft: 3–5 s). */
+export const defaultRoll = (b: Boat): RollParams => ({ inertia: (0.61 * b.json.hull.beam) ** 2 * b.disp, zeta: 0.35 })
 
 export const rollPeriod = (b: Boat, p: RollParams) => 2 * Math.PI * Math.sqrt(p.inertia / (b.disp * G * b.gm))
 
@@ -17,7 +17,7 @@ export const rollPeriod = (b: Boat, p: RollParams) => 2 * Math.PI * Math.sqrt(p.
 export const puffProfile = (t: number, dTws: number, up = 1.5, hold = 5, down = 2.5) =>
   t < 0 ? 0 : t < up ? (dTws * t) / up : t < up + hold ? dTws : t < up + hold + down ? dTws * (1 - (t - up - hold) / down) : 0
 
-export interface Trajectory { t: number[]; phi: number[]; tws: number[]; phiStaticPuff: number; phiStaticBase: number; peak: number; peakT: number }
+export interface Trajectory { t: number[]; phi: number[]; tws: number[]; phiStaticPuff: number; phiStaticBase: number; peak: number; peakT: number; baseOver: boolean; puffOver: boolean }
 
 /**
  * Integrate I·φ̈ = HM(φ, V(t)) − RM_total(φ) − c·φ̇ (φ positive to leeward) from the base equilibrium through a puff.
@@ -34,7 +34,7 @@ export function simulatePuff(
   const K = boat.disp * G * boat.gm
   const c = 2 * params.zeta * Math.sqrt(params.inertia * K)
   let phi = eq0.phi, omega = 0, peak = phi, peakT = 0
-  const out: Trajectory = { t: [], phi: [], tws: [], phiStaticPuff: eqP.phi, phiStaticBase: eq0.phi, peak, peakT }
+  const out: Trajectory = { t: [], phi: [], tws: [], phiStaticPuff: eqP.phi, phiStaticBase: eq0.phi, peak, peakT, baseOver: eq0.overpowered, puffOver: eqP.overpowered }
   const n = Math.round(duration / dt)
   for (let i = 0; i <= n; i++) {
     const t = i * dt

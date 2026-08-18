@@ -4,10 +4,14 @@ import { derive, type Derived } from '../model'
 import type { Action, State } from '../state'
 import { fmt } from './svg'
 
-interface Pending { step: number; guess: number }
+interface Pending { step: number; guess: number | null }
 interface Result { step: number; guess: number; answer: number; explain: string }
 const LS = 'hikeit.quiz.v1'
-const loadResults = (): Result[] => { try { return JSON.parse(localStorage.getItem(LS) ?? '[]') } catch { return [] } }
+const isResult = (r: unknown): r is Result => {
+  const x = r as Result
+  return !!x && Number.isInteger(x.step) && !!LESSONS[x.step]?.quiz && Number.isFinite(x.guess) && Number.isFinite(x.answer) && typeof x.explain === 'string'
+}
+const loadResults = (): Result[] => { try { const d: unknown = JSON.parse(localStorage.getItem(LS) ?? '[]'); return Array.isArray(d) ? d.filter(isResult) : [] } catch { return [] } }
 
 export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispatch: React.Dispatch<Action> }) {
   const i = s.lessonStep
@@ -23,13 +27,14 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
   }
   const go = (n: number) => {
     const q = LESSONS[n]?.quiz
-    if (q && n === i + 1) { setPending({ step: n, guess: (q.min + q.max) / 2 }); return }
+    if (q && n === i + 1) { setPending({ step: n, guess: null }); return }
     setPending(null); goDirect(n)
   }
   const reveal = () => {
-    if (!pending) return
+    if (!pending || pending.guess === null) return
     const target = LESSONS[pending.step]
-    const after = derive({ ...s, ...target.patch(s) })
+    // same sail plan before/after: an auto sail change would mask the crew effect
+    const after = derive({ ...s, ...target.patch(s), sailMode: s.sailMode === 'auto' ? d.sailModeId : s.sailMode })
     const answer = target.quiz!.answer(d, after)
     const r: Result = { step: pending.step, guess: pending.guess, answer, explain: target.quiz!.explain(d, after) }
     const next = [...results.filter((x) => x.step !== r.step), r]
@@ -38,7 +43,7 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
   }
   const result = results.find((r) => r.step === i)
   const q = pending ? LESSONS[pending.step].quiz! : null
-  const score = results.filter((r) => Math.abs(r.guess - r.answer) <= (LESSONS[r.step].quiz!.max - LESSONS[r.step].quiz!.min) * 0.15).length
+  const score = results.filter((r) => LESSONS[r.step]?.quiz && Math.abs(r.guess - r.answer) <= (LESSONS[r.step].quiz!.max - LESSONS[r.step].quiz!.min) * 0.15).length
 
   return (
     <div className="lesson">
@@ -49,14 +54,14 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
             <h3>Predict first</h3>
             <p>{q.question}</p>
             <div className="quiz-slider">
-              <input type="range" min={q.min} max={q.max} step={q.step} value={pending.guess} onChange={(e) => setPending({ ...pending, guess: Number(e.target.value) })} aria-label="your guess" />
-              <span className="num">{fmt(pending.guess, q.step < 1 ? 1 : 0)} {q.unit}</span>
+              <input type="range" min={q.min} max={q.max} step={q.step} value={pending.guess ?? q.min} onChange={(e) => setPending({ ...pending, guess: Number(e.target.value) })} aria-label="your guess" />
+              <span className="num">{pending.guess === null ? '— slide to guess' : `${fmt(pending.guess, q.step < 1 ? 1 : 0)} ${q.unit}`}</span>
             </div>
           </div>
         ) : (
           <>
             <h3>{step.title}</h3>
-            {result && (
+            {result && step.quiz && (
               <div className={`quiz-result ${Math.abs(result.guess - result.answer) <= (step.quiz!.max - step.quiz!.min) * 0.15 ? 'good' : ''}`}>
                 <b>You said {fmt(result.guess, 1)} {step.quiz!.unit} — it's {fmt(result.answer, 1)} {step.quiz!.unit}.</b> {result.explain}
               </div>
@@ -70,7 +75,8 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
         {pending ? (
           <>
             <button className="btn sm" onClick={() => setPending(null)}>Cancel</button>
-            <button className="btn sm primary" onClick={reveal}>Reveal →</button>
+            <button className="btn sm" onClick={() => { const n = pending.step; setPending(null); goDirect(n) }}>Skip</button>
+            <button className="btn sm primary" onClick={reveal} disabled={pending.guess === null}>Reveal →</button>
           </>
         ) : (
           <>

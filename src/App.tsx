@@ -10,7 +10,7 @@ import Controls from './ui/Controls'
 import { CrewList, Stats } from './ui/Readouts'
 import CrewSheet from './ui/CrewSheet'
 import Compare from './ui/Compare'
-import PuffPanel, { sampleAt, usePuff } from './ui/Puff'
+import PuffPanel, { usePuffCleanup } from './ui/Puff'
 import { derive } from './model'
 import { useMemo } from 'react'
 import Advanced from './ui/Advanced'
@@ -47,8 +47,7 @@ function App() {
   const d = useMemo(() => (dA ? { ...d0, ghost: { curves: dA.curves, eq: dA.eq, flat: dA.flat } } : d0), [d0, dA])
   const [hover, setHover] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
-  const { puff, start: startPuff, stop: stopPuff } = usePuff(d0)
-  const dyn = puff ? sampleAt(puff.traj, puff.t) : null
+  usePuffCleanup()
   const [copied, setCopied] = useState(false)
 
   const sRef = useRef(s); sRef.current = s
@@ -99,11 +98,11 @@ function App() {
             onPosture={(id, posture) => dispatch({ type: 'setCrew', id, patch: { posture } })} />
         </section>
         <section className="panel area-section">
-          <div className="panel-head"><h2>Stern view at equilibrium</h2><span className="hint">two couples: weight/buoyancy vs sail/keel</span></div>
-          <HeelSection d={d} hover={hover} railPosture={railPosture} dyn={dyn} />
+          <div className="panel-head"><h2>Stern view</h2><span className="hint">at equilibrium — or rolling through a puff · weight/buoyancy vs sail/keel</span></div>
+          <HeelSection d={d} hover={hover} railPosture={railPosture} />
+          <div style={{ marginTop: 10, borderTop: '1px solid var(--line)', paddingTop: 8 }}><PuffPanel d={d} /></div>
         </section>
         <section className="panel area-stats"><Stats d={d} s={s} /></section>
-        <section className="panel area-puff"><PuffPanel d={d} puff={puff} onStart={startPuff} onStop={stopPuff} /></section>
         <section className="panel area-compare"><Compare s={s} d={d} dA={dA} dispatch={dispatch} /></section>
         <section className="panel area-posture"><PosturePanel s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-controls"><Controls s={s} d={d} dispatch={dispatch} /></section>

@@ -31,7 +31,7 @@ export const LESSONS: LessonStep[] = [
       'Everyone below. Heel the boat and the keel and hull push back with a righting moment: RM = Δ·g·GZ. The navy curve on the moment chart is the boat\'s own righting moment against heel angle — steep at first (that slope is GM), peaking around 55–60°.',
       'On this Xp 44 the ORC certificate gives RM ≈ 260 kg·m per degree of heel near upright, so GM ≈ 1.5 m. Note the certificate already counts the crew\'s weight — on the centreline, about 1 m up. Where they sit is what we can change.',
     ],
-    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'auto', targetAngle: true, crew: form(s, 'All below') }),
+    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'j1', targetAngle: true, crew: form(s, 'All below') }),
   },
   {
     title: 'Wind pushes, the boat settles',
@@ -45,7 +45,7 @@ export const LESSONS: LessonStep[] = [
     title: 'Now put the crew on the rail',
     body: [
       'Ten people at ~85 kg is 850 kg — nearly 9% of the boat\'s displacement. Sitting them on the windward side deck, ~1.8 m off the centreline, adds their own righting moment: each person contributes m·g·y·cosφ, so the whole rail is worth roughly 11–12 kN·m here — a fifth to a quarter of what the hull and keel provide.',
-      'Watch the amber band open up between the hull curve and the total, the equilibrium heel drop about 4°, and G slide to windward in the stern view.',
+      'Watch the amber band open up between the hull curve and the total, the equilibrium heel drop by a few degrees (your reveal above has the exact number), and G slide to windward in the stern view.',
     ],
     patch: (s) => ({ crew: form(s, 'Racing: rail sitting') }),
     quiz: {

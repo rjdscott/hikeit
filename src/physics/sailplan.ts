@@ -4,7 +4,7 @@ import { solveFlat } from './solve'
 import type { Wind } from './aero'
 
 export const AUTO = 'auto'
-export const FLAT_CHANGE_DOWN = 0.7 // below this much depower a real crew changes headsail / reefs (J1→J2 ≈ 14 kn, J3 ≈ 18 kn)
+export const FLAT_CHANGE_DOWN = 0.6 // below this much depower a real crew changes headsail / reefs (hiking crew: J1 to ~16 kn, J2 17, J3 18, reefs from ~19)
 
 /**
  * Auto sail selection: the most sail (lowest rank) that still holds the target heel with flat ≥ FLAT_CHANGE_DOWN.
