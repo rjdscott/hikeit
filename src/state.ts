@@ -114,6 +114,7 @@ export function encodeHash(s: State): string {
   })
   if (s.lessonStep !== null) p.set('step', String(s.lessonStep))
   if (s.present) p.set('present', '1')
+  if (s.pinned) p.set('a', encodeHash({ ...s, ...s.pinned, pinned: null, lessonStep: null, present: false }).slice(1))
   return '#' + p.toString()
 }
 
@@ -133,6 +134,8 @@ export function decodeHash(hash: string, base: State, validSlots: Record<string,
     lessonStep: p.has('step') ? num('step', 0, 0, 20) : null,
     present: p.get('present') === '1',
   }
+  const a = p.get('a')
+  if (a) s.pinned = snapshot(decodeHash('#' + a, base, validSlots))
   const crewStr = p.get('crew')
   if (crewStr) {
     const parts = crewStr.split(',')

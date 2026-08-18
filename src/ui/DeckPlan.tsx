@@ -109,6 +109,15 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
   const onSlotTap = (s: Slot) => {
     if (selected !== null) onMove(selected, s.id)
   }
+  // taps that miss a 21 px marker on a phone: nearest crew within 0.45 m selects; otherwise nearest slot moves the selected crew
+  const onDeckDown = (e: React.PointerEvent<SVGGElement>) => {
+    if ((e.target as Element).closest?.('.crew')) return
+    const p = toBoat(e)
+    let best: Crew | null = null, bd = 0.45
+    for (const c of crew) { const q = pos.get(c.id); if (!q) continue; const dd = Math.hypot(q.x - p.x, q.y - p.y); if (dd < bd) { bd = dd; best = c } }
+    if (best) { onSelect(best.id); return }
+    if (selected !== null) { const sl = nearestSlot(p.x, p.y); if (sl) onMove(selected, sl.id) }
+  }
 
   const dropTarget = drag?.moved ? nearestSlot(drag.x, drag.y) : null
   const occupied = new Set(crew.map((c) => c.slot))
@@ -124,7 +133,7 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
   return (
     <div ref={wrapRef}>
       <svg ref={svgRef} className="deck-svg" viewBox={vb} style={{ maxHeight: vertical ? '70vh' : undefined }} aria-label="Deck plan with draggable crew">
-        <g ref={gRef} transform={gT}>
+        <g ref={gRef} transform={gT} onPointerDown={onDeckDown}>
           {/* wind arrow: from the windward side toward the boat */}
           <g transform={`translate(${mastX - 3.4}, 0)`}>
             <line x1={0} y1={-2.55} x2={0} y2={-1.35} stroke="var(--c-sail)" strokeWidth={0.06} markerEnd="url(#arrow-sail)" />
@@ -164,7 +173,7 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
                 <circle cx={s.x} cy={-s.y} r={target ? 0.42 : 0.3} fill={target ? 'rgba(217,123,26,0.18)' : 'transparent'}
                   stroke={target ? 'var(--c-crew)' : occ ? 'transparent' : 'var(--line-strong)'} strokeWidth={target ? 0.05 : 0.03} strokeDasharray={target ? '' : '0.08 0.08'} />
                 {(s.kind !== 'rail' || s.side === 'w') && !hideLabel && (
-                  <text x={s.x} y={-s.y + (s.kind === 'rail' ? (s.side === 'w' ? -0.42 : 0.62) : 0.1)} className="ml" fontSize={0.24} textAnchor="middle" dominantBaseline={s.kind === 'rail' ? 'auto' : 'middle'} transform={vertical ? `rotate(-90 ${s.x} ${-s.y})` : ''}>
+                  <text x={s.x} y={-s.y + (s.kind === 'rail' ? (vertical ? -0.55 : -0.42) : 0.1)} className="ml" fontSize={0.24} textAnchor="middle" dominantBaseline={s.kind === 'rail' && !vertical ? 'auto' : 'middle'} transform={vertical ? `rotate(-90 ${s.x} ${-s.y + (s.kind === 'rail' ? -0.55 : 0.1)})` : ''}>
                     {s.kind === 'rail' ? s.label.replace('Rail ', '') : s.label}
                   </text>
                 )}
@@ -205,9 +214,9 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
                   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (selected !== c.id) onSelect(c.id); else if (rail && p.slot.side === 'w') onPosture(c.id, NEXT[c.posture]) }
                   else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) onMove(c.id, rails[idx - 1].id) }
                   else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (idx >= 0 && idx < rails.length - 1) onMove(c.id, rails[idx + 1].id) }
-                  else if (e.key === 'w' || e.key === 'W') onMove(c.id, 'rail-w-4')
-                  else if (e.key === 'l' || e.key === 'L') onMove(c.id, 'rail-l-4')
-                  else if (e.key === 'b' || e.key === 'B') onMove(c.id, 'below')
+                  else if (e.key === 'w' || e.key === 'W') { e.preventDefault(); onMove(c.id, 'rail-w-4') }
+                  else if (e.key === 'l' || e.key === 'L') { e.preventDefault(); onMove(c.id, 'rail-l-4') }
+                  else if (e.key === 'b' || e.key === 'B') { e.preventDefault(); onMove(c.id, 'below') }
                 }}>
                 {rail && c.posture !== 'sit' && !isDrag && (
                   <line x1={0} y1={0} x2={0} y2={-Math.sign(p.slot.y) * (c.posture === 'hike' ? 0.55 : 0.32)} stroke="var(--c-crew)" strokeWidth={0.12} strokeLinecap="round" />

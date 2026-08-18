@@ -50,7 +50,7 @@ const GROUPS: { title: string; items: [string, string][] }[] = [
   {
     title: 'Puff & dynamics',
     items: [
-      ['Puff', 'A gust: ramps up over 1.5 s, holds 5 s, dies over 2.5 s. Sails, trim and crew are held as they are.'],
+      ['Puff', 'A gust: ramps up over 1.5 s, holds 5 s, dies over 2.5 s. Sails and trim are held; the optional comparison moves the crew from the cockpit to their positions after a reaction time.'],
       ['Roll period', 'Natural time for one roll oscillation (~4 s here). The boat overshoots the new steady heel because it cannot respond instantly.'],
       ['Overshoot', 'Peak heel in the puff minus the steady heel at the puff wind.'],
       ['ζ (zeta)', 'Damping ratio of the roll (0.35): keel, hull and sails resist the rolling motion.'],

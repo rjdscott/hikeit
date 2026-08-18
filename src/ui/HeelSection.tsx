@@ -112,7 +112,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           <line x1={ce.x} y1={ce.y} x2={dimX + 0.1} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={clr.x} y1={clr.y} x2={dimX + 0.1} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={dimX} y1={ce.y} x2={dimX} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
-          <text x={dimX - 0.15} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-sail)" transform={`rotate(-90 ${dimX - 0.15} ${(ce.y + clr.y) / 2})`}>h·cosφ = {fmt(d.arm * cos, 1)} m (h {fmt(d.arm, 1)} m) → HM {fmt(hmNow / 1e3, 1)} kN·m</text>
+          <text x={dimX - 0.15} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-sail)" transform={`rotate(-90 ${dimX - 0.15} ${(ce.y + clr.y) / 2})`}>h {fmt(d.arm, 1)} m → HM {fmt(hmNow / 1e3, 1)} kN·m</text>
           {/* heel angle arc */}
           <path d={`M0,-2.2 A2.2,2.2 0 0 1 ${2.2 * Math.sin(phi)},${-2.2 * Math.cos(phi)}`} fill="none" stroke="var(--ink)" strokeWidth={0.03} />
           <line x1={0} y1={0} x2={0} y2={-2.4} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
@@ -125,7 +125,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
       <div className="legend">
         <span><i className="sw" style={{ background: 'var(--c-hull)' }} />weight at G · GZ</span>
         <span><i className="sw" style={{ background: 'var(--c-buoy)' }} />buoyancy at B</span>
-        <span><i className="sw" style={{ background: 'var(--c-sail)' }} />sail / keel forces (horizontal) · vertical gap h·cosφ; HM = F_H·h·cos²φ</span>
+        <span><i className="sw" style={{ background: 'var(--c-sail)' }} />sail / keel forces · HM = F_H × h, with h measured along the mast (the vertical gap drawn is h·cosφ) and F_H already reduced by cos²φ</span>
         <span><i className="sw" style={{ background: 'var(--c-crew)' }} />crew (G shift {fmt(cg.yG * 100, 0)} cm to windward)</span>
         <span className="muted">arrows fixed length; magnitudes labelled</span>
       </div>

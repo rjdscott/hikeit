@@ -29,7 +29,7 @@ export default function Controls({ s, d, dispatch }: Props) {
       <div className="panel-head"><h2>Conditions</h2><span className="hint">AWS {fmt(d.wind.aws, 1)} kn · AWA {fmt(d.wind.awa, 0)}° · boat {fmt(d.wind.bsp, 1)} kn</span></div>
       <Range label="True wind speed" value={s.tws} min={4} max={30} step={0.5} unit="kn" onChange={(v) => patch({ tws: v })} />
       {BOAT_JSON.targets && upwind && (
-        <label className="toggle"><input type="checkbox" checked={s.targetAngle} onChange={(e) => patch({ targetAngle: e.target.checked, twa: effectiveTwa(s) })} /> Sail the target angle from the cockpit card (TWA {effectiveTwa({ ...s, targetAngle: true })}° at {fmt(s.tws, 0)} kn)</label>
+        <label className="toggle"><input type="checkbox" checked={s.targetAngle} onChange={(e) => patch({ targetAngle: e.target.checked, twa: effectiveTwa(s) })} /> Sail the target angle from the cockpit card (TWA {effectiveTwa({ ...s, targetAngle: true })}° at {fmt(s.tws, 0)} kn{BOAT_JSON.targets?.upwind.bspProvisional ? ' — speeds provisional' : ''})</label>
       )}
       <Range label="True wind angle" value={effectiveTwa(s)} min={mode.twa[0]} max={mode.twa[1]} step={1} unit="°" disabled={s.targetAngle && upwind && !!BOAT_JSON.targets} onChange={(v) => patch({ twa: v })} />
       <div className="field">

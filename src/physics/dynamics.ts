@@ -27,8 +27,8 @@ export function simulatePuff(
   boat: Boat, crew: CrewPoint[], zPenalty: boolean, flat: number,
   tws: number, twa: number, bsp: number, dTws: number,
   params: RollParams = defaultRoll(boat), duration = 14, dt = 1 / 60,
-  /** optional crew reaction: switch to `crewAfter` once t ≥ 1 + reactAt (seconds after the puff starts) */
-  react?: { crewAfter: CrewPoint[]; reactAt: number },
+  /** optional crew reaction: crew move from `crew` to `crewAfter` starting reactAt s after the puff begins, taking `moveTime` s (default 1.5) */
+  react?: { crewAfter: CrewPoint[]; reactAt: number; moveTime?: number },
 ): Trajectory {
   const wind0 = apparentWind(tws, twa, bsp)
   const eq0 = equilibrium({ boat, crew, wind: wind0, flat, zPenalty })
@@ -42,7 +42,12 @@ export function simulatePuff(
     const t = i * dt
     const v = tws + puffProfile(t - 1, dTws) // puff starts at t = 1 s
     const w = apparentWind(v, twa, bsp)
-    const crewNow = react && t >= 1 + react.reactAt ? react.crewAfter : crew
+    let crewNow = crew
+    if (react) {
+      const f = Math.min(1, Math.max(0, (t - 1 - react.reactAt) / (react.moveTime ?? 1.5)))
+      if (f >= 1) crewNow = react.crewAfter
+      else if (f > 0) crewNow = crew.map((p, k) => ({ ...p, y: p.y + f * (react.crewAfter[k].y - p.y), z: p.z + f * (react.crewAfter[k].z - p.z) }))
+    }
     const M = heelingMoment(boat, w, flat, phi) - rmHull(boat, phi) - rmCrew(crewNow, phi, boat.zCrew0, zPenalty) - c * omega
     omega += (M / params.inertia) * dt
     phi += omega * dt

@@ -17,6 +17,7 @@ export interface Derived {
   sailModeId: string // resolved (auto → concrete)
   crewPts: CrewPoint[]
   wind: Wind
+  bspSrc: 'card' | 'polar'
   flat: number
   zPenalty: boolean
   trimLimited: boolean
@@ -99,7 +100,7 @@ export function derive(s: State): Derived {
     return [po, { rmCrew: rmCrew(pts, e.phi, boat.zCrew0, s.zPenalty), phiDeg: e.phi / DEG, overpowered: e.overpowered, freeWind: t !== null && tb !== null ? t - tb : null, flatReq: tr?.flat ?? null, drive }]
   })) as Derived['postures']
   return {
-    boat, sailModeId, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
+    boat, sailModeId, crewPts, wind, bspSrc: card ? 'card' : 'polar', flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
     curves: cv, eq, phiDeg: phi / DEG, ghost, sweep, sweepBase,
     freeWind: ta !== null && tb !== null ? ta - tb : null,
     rmHullEq, rmCrewEq, rmTotalEq: rmHullEq + rmCrewEq, hmEq: heelingMoment(boat, wind, trim.flat, phi),

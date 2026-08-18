@@ -43,3 +43,17 @@ describe('crew reaction', () => {
     expect(Math.abs(late.phi[late.phi.length - 1] - early.phi[early.phi.length - 1])).toBeLessThan(1.5 * DEG)
   })
 })
+
+describe('crew reaction ramp', () => {
+  it('peak heel is monotone in reaction time (early movers do better) and never below the in-place crew', () => {
+    const sit = crewPositions(defaultCrew().map((c, i) => ({ ...c, ...presets['Racing: rail sitting'](i) })), boat.slotById)
+    const pit = boat.slotById['pit-w']
+    const caught = crew.map((p) => (p.y > 1 ? { ...p, y: pit.y, z: pit.z } : p))
+    const inPlace = simulatePuff(boat, crew, true, 0.85, 12, 40, 7.3, 5)
+    const peaks = [1, 1.5, 2, 2.5, 3].map((r) => simulatePuff(boat, caught, true, 0.85, 12, 40, 7.3, 5, undefined, 14, 1 / 60, { crewAfter: crew, reactAt: r }).peak)
+    for (let k = 1; k < peaks.length; k++) expect(peaks[k]).toBeGreaterThanOrEqual(peaks[k - 1] - 0.05 * DEG)
+    expect(peaks[peaks.length - 1] - peaks[0]).toBeGreaterThan(1 * DEG) // late movers pay ≥ 1°
+    for (const pk of peaks) expect(pk).toBeGreaterThan(inPlace.peak - 0.5 * DEG)
+    void sit
+  })
+})

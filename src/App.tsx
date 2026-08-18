@@ -64,7 +64,7 @@ function App() {
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
-      if (e.metaKey || e.ctrlKey || e.altKey || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return
+      if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return
       if (e.key === 'p' || e.key === 'P') dispatch({ type: 'patch', patch: { present: !sRef.current.present } })
     }
     addEventListener('keydown', k); return () => removeEventListener('keydown', k)
@@ -75,9 +75,21 @@ function App() {
     return () => removeEventListener('hashchange', on)
   }, [])
 
+  const [shareMsg, setShareMsg] = useState<string | null>(null)
   const share = async () => {
-    try { await navigator.clipboard.writeText(location.href); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* ignore */ }
+    const url = location.href
+    const flash = (m: string) => { setShareMsg(m); setTimeout(() => setShareMsg(null), 1800) }
+    if (navigator.share) {
+      try { await navigator.share({ title: 'hikeit scenario', url }); return } catch (e) { if ((e as Error).name === 'AbortError') return }
+    }
+    try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { flash('Copy blocked — long-press the address bar to copy the link') }
   }
+  // debounced live region so screen-reader users hear the effect of a move
+  const [live, setLive] = useState('')
+  useEffect(() => {
+    const t = setTimeout(() => setLive(`Heel ${d.eq.overpowered ? 'overpowered' : d.phiDeg.toFixed(1) + ' degrees'}, crew ${(d.rmCrewEq / 1e3).toFixed(1)} kilonewton metres, free wind ${d.freeWind === null ? 'not available' : d.freeWind.toFixed(1) + ' knots'}`), 400)
+    return () => clearTimeout(t)
+  }, [d])
   const railCrew = s.crew.filter((c) => d.boat.slotById[c.slot]?.kind === 'rail' && d.boat.slotById[c.slot].side === 'w')
   const railPosture = railCrew.length ? railCrew.map((c) => c.posture).sort((a, b) => railCrew.filter((c) => c.posture === b).length - railCrew.filter((c) => c.posture === a).length)[0] : null
   const startLesson = () => dispatch({ type: 'lesson', step: 0, patch: lessonStateAt(s, 0) })
@@ -91,18 +103,19 @@ function App() {
         </div>
         <div className="actions">
           {s.lessonStep === null ? <button className="btn primary" onClick={startLesson}>Start the lesson</button> : <span className="small muted">Lesson mode — every control stays live</span>}
-          <button className="btn" onClick={share}>{copied ? 'Link copied ✓' : 'Share this scenario'}</button>
+          <button className="btn" onClick={share}>{copied ? 'Link copied ✓' : shareMsg ?? 'Share this scenario'}</button>
           <button className="btn" onClick={() => dispatch({ type: 'patch', patch: { present: !s.present } })} title="Presenter mode: bigger type, essentials only (P)">{s.present ? 'Exit presenter' : 'Present'}</button>
         </div>
       </header>
 
+      <div className="sr-only" aria-live="polite" aria-atomic="true">{live}</div>
       <div className="minibar" aria-hidden="true">
         <span>Heel <b className="num">{d.eq.overpowered ? 'over' : d.phiDeg.toFixed(1) + '°'}</b></span>
         <span>Crew <b className="num" style={{ color: 'var(--c-crew-light)' }}>{d.rmCrewEq >= 0 ? '+' : ''}{(d.rmCrewEq / 1e3).toFixed(1)}</b> kN·m</span>
         <span>Free wind <b className="num">{d.freeWind === null ? '–' : (d.freeWind >= 0 ? '+' : '') + d.freeWind.toFixed(1)}</b> kn</span>
         <span>{d.wind.tws.toFixed(0)} kn · flat <b className="num">{d.flat.toFixed(2)}</b></span>
       </div>
-      <div className="grid">
+      <div className={`grid${s.lessonStep !== null && LESSONS[s.lessonStep] ? ` focus-${LESSONS[s.lessonStep].focus}` : ''}`}>
         {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} d={d} dispatch={dispatch} /></section>}
         <section className="panel area-deck">
           <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the red arrow (windward side) · drag crew to slots</span></div>

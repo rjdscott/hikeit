@@ -42,6 +42,7 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
   }
   useEffect(() => {
     const k = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
       if (i === null) return

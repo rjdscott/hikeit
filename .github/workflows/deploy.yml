@@ -20,9 +20,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
       - run: npm test
-      - run: npx vite build
+      - run: npm run build   # tsc --noEmit && eslint && vite build
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
       - name: End-to-end + accessibility (axe) against the production build

@@ -231,11 +231,41 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 
 /* ---- presenter mode ---- */
 .app.present { max-width: 1600px; font-size: 17px; }
-.app.present .area-eq, .app.present .area-glossary, .app.present .area-advanced, .app.present .area-readouts, .app.present .footer, .app.present .area-posture, .app.present .area-compare { display: none; }
-.app.present .grid { grid-template-columns: 3fr 2fr; grid-template-areas: "lesson lesson" "deck section" "stats section" "controls moment" "sweep sweep"; }
+.app.present .area-eq, .app.present .area-glossary, .app.present .area-advanced, .app.present .area-readouts, .app.present .footer { display: none; }
+.app.present .grid { grid-template-columns: 3fr 2fr; grid-template-areas: "lesson lesson" "deck section" "stats section" "controls moment" "compare posture" "sweep sweep"; }
 .app.present .stat .v { font-size: 1.6rem; }
 .app.present h2 { font-size: 1.05rem; }
 .app.present .lesson .body { font-size: 1.2rem; }
 .app.present .lesson h3 { font-size: 1.4rem; }
 .app.present .panel { padding: 18px 20px; }
-@media (max-width: 900px) { .app.present .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "section" "controls" "moment" "sweep"; } }
+@media (max-width: 900px) { .app.present .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "section" "controls" "moment" "compare" "posture" "sweep"; } }
+
+/* ---- touch targets ---- */
+@media (pointer: coarse) {
+  .btn.sm, .lesson .nav .btn, .sheet-group .btn, .chips .btn { padding: 9px 12px; min-height: 40px; }
+  .seg button { min-height: 44px; }
+  .lesson .dots { gap: 8px; }
+  .lesson .dots button { width: 16px; height: 16px; }
+  .toggle input[type=checkbox] { width: 20px; height: 20px; }
+  input[type=range] { height: 28px; }
+  .sheet-head .btn { min-width: 40px; }
+}
+.sheet:focus { outline: none; }
+/* screen-reader only */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ---- lesson focus: on phones the panel the step talks about comes right after the lesson card ---- */
+@media (max-width: 900px) {
+  .grid.focus-moment { grid-template-areas: "lesson" "moment" "deck" "stats" "section" "controls" "compare" "posture" "readouts" "sweep" "eq" "glossary" "advanced"; }
+  .grid.focus-controls { grid-template-areas: "lesson" "controls" "stats" "deck" "section" "compare" "posture" "readouts" "moment" "sweep" "eq" "glossary" "advanced"; }
+  .grid.focus-deck { grid-template-areas: "lesson" "deck" "stats" "posture" "section" "controls" "compare" "readouts" "moment" "sweep" "eq" "glossary" "advanced"; }
+  .grid.focus-section { grid-template-areas: "lesson" "section" "stats" "deck" "controls" "compare" "posture" "readouts" "moment" "sweep" "eq" "glossary" "advanced"; }
+  .grid.focus-sweep { grid-template-areas: "lesson" "sweep" "stats" "deck" "section" "controls" "compare" "posture" "readouts" "moment" "eq" "glossary" "advanced"; }
+  .grid.focus-compare { grid-template-areas: "lesson" "compare" "stats" "deck" "section" "controls" "posture" "readouts" "moment" "sweep" "eq" "glossary" "advanced"; }
+  .app.present .grid.focus-moment { grid-template-areas: "lesson" "moment" "deck" "stats" "section" "controls" "compare" "posture" "sweep"; }
+  .app.present .grid.focus-controls { grid-template-areas: "lesson" "controls" "stats" "deck" "section" "moment" "compare" "posture" "sweep"; }
+  .app.present .grid.focus-section { grid-template-areas: "lesson" "section" "stats" "deck" "controls" "moment" "compare" "posture" "sweep"; }
+  .app.present .grid.focus-sweep { grid-template-areas: "lesson" "sweep" "stats" "deck" "section" "controls" "moment" "compare" "posture"; }
+  .app.present .grid.focus-deck { grid-template-areas: "lesson" "deck" "stats" "posture" "section" "controls" "moment" "compare" "sweep"; }
+  .app.present .grid.focus-compare { grid-template-areas: "lesson" "compare" "stats" "deck" "section" "controls" "moment" "posture" "sweep"; }
+}

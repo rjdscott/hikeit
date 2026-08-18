@@ -5,7 +5,8 @@ Interactive educational sim: how crew position (rail / hiking / cockpit / below)
 ## Commands
 - `npm run dev` — Vite dev server (`/hikeit/` base path)
 - `npm test` — vitest (physics, state, perf); CI gate before deploy
-- `npm run build` — `tsc --noEmit && vite build`
+- `npm run build` — `tsc --noEmit && eslint . && vite build`
+- `npm run e2e` — Playwright drag/tap/sheet/quiz/puff flows + axe (needs `CHROME=<chromium binary>` locally)
 - Screenshot: `CHROME=<headless-shell> node scripts/shot.mjs out.png "http://localhost:5173/hikeit/#tws=14" 1380`
 
 ## Layout

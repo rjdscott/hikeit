@@ -100,3 +100,17 @@ describe('pin A/B', () => {
     expect(s.pinned).toBeNull()
   })
 })
+
+describe('share with pinned A', () => {
+  it('encodes and decodes formation A', () => {
+    let s = reducer(initialState(), { type: 'preset', name: 'Racing: rail hiking' })
+    s = reducer(s, { type: 'patch', patch: { tws: 16 } })
+    s = reducer(s, { type: 'pin' })
+    s = reducer(s, { type: 'preset', name: 'All below' })
+    const d = decodeHash(encodeHash(s), initialState(), boat.slotById)
+    expect(d.pinned).not.toBeNull()
+    expect(d.pinned!.tws).toBe(16)
+    expect(d.pinned!.crew[0].slot).toBe('rail-w-0'); expect(d.pinned!.crew[0].posture).toBe('hike')
+    expect(d.crew[0].slot).toBe('below')
+  })
+})
