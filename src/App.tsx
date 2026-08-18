@@ -7,7 +7,8 @@ import DeckPlan from './ui/DeckPlan'
 import HeelSection from './ui/HeelSection'
 import { MomentChart, WindSweepChart } from './ui/Charts'
 import Controls from './ui/Controls'
-import { CrewTable, Stats } from './ui/Readouts'
+import { CrewList, Stats } from './ui/Readouts'
+import CrewSheet from './ui/CrewSheet'
 import Advanced from './ui/Advanced'
 import Lesson from './ui/Lesson'
 import PosturePanel from './ui/Posture'
@@ -38,6 +39,7 @@ function App() {
   const [s, dispatch] = useReducer(reducer, undefined, init)
   const d = useDerived(s)
   const [hover, setHover] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
 
   const sRef = useRef(s); sRef.current = s
@@ -77,7 +79,7 @@ function App() {
         {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} dispatch={dispatch} /></section>}
         <section className="panel area-deck">
           <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the red arrow (windward side) · drag crew to slots</span></div>
-          <DeckPlan boat={d.boat} crew={s.crew} hover={hover} onHover={setHover}
+          <DeckPlan boat={d.boat} crew={s.crew} hover={hover} onHover={setHover} selected={selected} onSelect={setSelected}
             onMove={(id, slot) => dispatch({ type: 'moveCrew', id, slot })}
             onPosture={(id, posture) => dispatch({ type: 'setCrew', id, patch: { posture } })} />
         </section>
@@ -88,7 +90,7 @@ function App() {
         <section className="panel area-stats"><Stats d={d} s={s} /></section>
         <section className="panel area-posture"><PosturePanel s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-controls"><Controls s={s} d={d} dispatch={dispatch} /></section>
-        <section className="panel area-readouts"><CrewTable s={s} d={d} hover={hover} onHover={setHover} dispatch={dispatch} /></section>
+        <section className="panel area-readouts"><CrewList s={s} d={d} hover={hover} selected={selected} onHover={setHover} onSelect={setSelected} /></section>
         <section className="panel area-moment">
           <div className="panel-head"><h2>Moments vs heel</h2><span className="hint">hover for values</span></div>
           <MomentChart d={d} hover={hover} />
@@ -102,6 +104,9 @@ function App() {
         </section>
         <section className="panel area-advanced"><Advanced s={s} d={d} dispatch={dispatch} /></section>
       </div>
+      {selected !== null && s.crew.some((c) => c.id === selected) && (
+        <CrewSheet id={selected} s={s} d={d} dispatch={dispatch} onClose={() => setSelected(null)} onSelect={setSelected} />
+      )}
       <footer className="footer">
         <p>Educational model for crew briefings — not a stability certificate. Physics, sources and assumptions: <a href="https://github.com/rjdscott/hikeit">github.com/rjdscott/hikeit</a>. Boat data from builder specs and public ORC certificates of Xp 44 sisterships.</p>
       </footer>

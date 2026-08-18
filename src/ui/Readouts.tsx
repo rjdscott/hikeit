@@ -1,18 +1,8 @@
 import type { Derived } from '../model'
 import type { Action, State } from '../state'
-import { POSTURE_LABEL, type Posture } from '../physics/types'
+import { POSTURE_LABEL } from '../physics/types'
+import { initials } from './CrewSheet'
 import { fmt, kNm } from './svg'
-import { useState } from 'react'
-
-const clampKg = (v: number) => Math.min(150, Math.max(40, Math.round(v)))
-
-/** Number input that only commits a clamped value on blur/enter, so typing works. */
-function KgInput({ value, onCommit, label }: { value: number; onCommit: (v: number) => void; label: string }) {
-  const [txt, setTxt] = useState<string | null>(null)
-  const commit = () => { if (txt !== null) { const v = Number(txt); if (Number.isFinite(v) && txt.trim() !== '') onCommit(clampKg(v)) } setTxt(null) }
-  return <input type="number" inputMode="numeric" min={40} max={150} value={txt ?? value} aria-label={label}
-    onChange={(e) => setTxt(e.target.value)} onBlur={commit} onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
-}
 
 export function Stats({ d, s }: { d: Derived; s: State }) {
   const over = d.eq.overpowered
@@ -31,43 +21,27 @@ export function Stats({ d, s }: { d: Derived; s: State }) {
   )
 }
 
-export function CrewTable({ s, d, hover, onHover, dispatch }: { s: State; d: Derived; hover: number | null; onHover: (id: number | null) => void; dispatch: React.Dispatch<Action> }) {
+export function CrewList({ s, d, hover, selected, onHover, onSelect }: { s: State; d: Derived; hover: number | null; selected: number | null; onHover: (id: number | null) => void; onSelect: (id: number) => void }) {
   const total = d.perCrew.reduce((a, p) => a + p.moment, 0)
+  const maxAbs = Math.max(1, ...d.perCrew.map((p) => Math.abs(p.moment)))
   return (
     <div>
-      <div className="panel-head"><h2>Crew</h2><span className="hint">edit names & weights · contribution at φ = {fmt(d.phiDeg, 1)}°</span></div>
-      <div style={{ overflowX: 'auto' }}>
-        <table className="tbl">
-          <thead><tr><th>Name</th><th className="num">kg</th><th className="num">RM (kN·m)</th><th>Position</th><th className="mob-hide">Posture</th><th className="num mob-hide">arm y (m)</th></tr></thead>
-          <tbody>
-            {s.crew.map((c) => {
-              const p = d.perCrew.find((x) => x.id === c.id)!
-              const slot = d.boat.slotById[c.slot]
-              return (
-                <tr key={c.id} className={hover === c.id ? 'hover' : ''} onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)}>
-                  <td><input value={c.name} onChange={(e) => dispatch({ type: 'setCrew', id: c.id, patch: { name: e.target.value } })} aria-label={`crew ${c.id + 1} name`} /></td>
-                  <td className="num"><KgInput value={c.kg} label={`${c.name} weight, kg`} onCommit={(kg) => dispatch({ type: 'setCrew', id: c.id, patch: { kg } })} /></td>
-                  <td className="num" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)', fontWeight: 500 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)}</td>
-                  <td>
-                    <select className="sel" value={c.slot} onChange={(e) => dispatch({ type: 'moveCrew', id: c.id, slot: e.target.value })} aria-label={`${c.name} position`}>
-                      {d.boat.slots.map((sl) => <option key={sl.id} value={sl.id}>{sl.label}</option>)}
-                    </select>
-                  </td>
-                  <td className="mob-hide">
-                    {slot?.kind === 'rail' && slot.side === 'w' ? (
-                      <select className="sel" value={c.posture} onChange={(e) => dispatch({ type: 'setCrew', id: c.id, patch: { posture: e.target.value as Posture } })} aria-label={`${c.name} posture`}>
-                        {(Object.keys(POSTURE_LABEL) as Posture[]).map((k) => <option key={k} value={k}>{POSTURE_LABEL[k]}</option>)}
-                      </select>
-                    ) : <span className="muted">–</span>}
-                  </td>
-                  <td className="num mob-hide">{p.y >= 0 ? '+' : ''}{fmt(p.y, 2)}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-          <tfoot><tr><td colSpan={2} className="muted">Σ crew ({s.crew.reduce((a, c) => a + c.kg, 0)} kg)</td><td className="num" style={{ fontWeight: 600 }}>{total >= 0 ? '+' : ''}{kNm(total, 2)}</td><td colSpan={3} className="mob-hide" /></tr></tfoot>
-        </table>
-      </div>
+      <div className="panel-head"><h2>Crew</h2><span className="hint">tap a person to move them · Σ {total >= 0 ? '+' : ''}{kNm(total, 1)} kN·m at φ = {fmt(d.phiDeg, 1)}°</span></div>
+      <ul className="crew-list">
+        {s.crew.map((c) => {
+          const p = d.perCrew.find((x) => x.id === c.id)!
+          const slot = d.boat.slotById[c.slot]
+          const wRail = slot?.kind === 'rail' && slot.side === 'w'
+          return (
+            <li key={c.id} className={`${hover === c.id ? 'hover' : ''} ${selected === c.id ? 'on' : ''}`} onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} onClick={() => onSelect(c.id)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(c.id) } }} aria-label={`${c.name}, ${slot?.label}, ${kNm(p.moment, 2)} kilonewton metres`}>
+              <span className="avatar">{initials(c.name, c.id)}</span>
+              <div className="who"><b>{c.name} <span className="num">{c.kg} kg</span></b><span>{slot?.label}{wRail ? ` · ${POSTURE_LABEL[c.posture]}` : ''} · arm {p.y >= 0 ? '+' : ''}{fmt(p.y, 2)} m</span></div>
+              <span className="val" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)}</span>
+              <span className="bar"><i style={{ width: `${(100 * Math.abs(p.moment)) / maxAbs}%`, background: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)' }} /></span>
+            </li>
+          )
+        })}
+      </ul>
     </div>
   )
 }

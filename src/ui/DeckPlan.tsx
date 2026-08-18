@@ -9,6 +9,8 @@ interface Props {
   boat: Boat
   crew: Crew[]
   hover: number | null
+  selected: number | null
+  onSelect: (id: number | null) => void
   onHover: (id: number | null) => void
   onMove: (id: number, slot: string) => void
   onPosture: (id: number, posture: Posture) => void
@@ -39,7 +41,7 @@ function layout(crew: Crew[], boat: Boat) {
   return pos
 }
 
-export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture }: Props) {
+export default function DeckPlan({ boat, crew, hover, selected, onSelect, onHover, onMove, onPosture }: Props) {
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const vertical = width < 560
   const gRef = useRef<SVGGElement>(null)
@@ -53,7 +55,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
     return () => el.removeEventListener('touchstart', h)
   }, [])
   const [drag, setDrag] = useState<{ id: number; x: number; y: number; moved: boolean; sx: number; sy: number } | null>(null)
-  const [selected, setSelected] = useState<number | null>(null)
+  const setSelected = onSelect
   const { loa } = boat.json.hull
   const pos = useMemo(() => layout(crew, boat), [crew, boat])
   const outline = boat.json.deck.outline
@@ -93,17 +95,16 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
     if (drag.moved) {
       const s = nearestSlot(drag.x, drag.y)
       if (s && s.id !== c.slot) onMove(c.id, s.id)
-      setSelected(null)
     } else if (selected === c.id) {
-      // second tap on a selected rail crew cycles posture; elsewhere deselects
+      // second tap on a selected windward-rail crew cycles posture; elsewhere just keeps the sheet open
       const slot = boat.slotById[c.slot]
-      if (slot?.kind === 'rail' && slot.side === 'w') onPosture(c.id, NEXT[c.posture]); else setSelected(null)
+      if (slot?.kind === 'rail' && slot.side === 'w') onPosture(c.id, NEXT[c.posture])
     } else setSelected(c.id)
     setDrag(null)
     void e
   }
   const onSlotTap = (s: Slot) => {
-    if (selected !== null) { onMove(selected, s.id); setSelected(null) }
+    if (selected !== null) onMove(selected, s.id)
   }
 
   const dropTarget = drag?.moved ? nearestSlot(drag.x, drag.y) : null
@@ -177,7 +178,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
             const isSel = selected === c.id, isHover = hover === c.id
             const initials = /^crew\s*\d+$/i.test(c.name.trim()) ? String(c.id + 1) : (c.name.trim().split(/\s+/).length > 1 ? c.name.trim().split(/\s+/).map((w) => w[0]).join('') : c.name.trim().slice(0, 2)).slice(0, 2).toUpperCase() || String(c.id + 1)
             return (
-              <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} transform={`translate(${x},${-y})`}
+              <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} style={{ transform: `translate(${x}px, ${-y}px)`, transition: isDrag ? 'none' : 'transform 220ms cubic-bezier(.2,.8,.2,1)' }}
                 onPointerDown={onDown(c)} onPointerMove={onMovePtr} onPointerUp={onUp(c)} onPointerCancel={() => setDrag(null)}
                 onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} role="button" tabIndex={0}
                 aria-label={`${c.name}, ${p.slot.label}${rail && p.slot.side === 'w' ? ', ' + POSTURE_LABEL[c.posture] + '. Enter: cycle posture' : ''}${rail ? '. Arrow keys: move along the rail' : ''}. W, L or B: move to windward rail, leeward rail or below`}
@@ -195,6 +196,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
                 {rail && c.posture !== 'sit' && !isDrag && (
                   <line x1={0} y1={0} x2={0} y2={-Math.sign(p.slot.y) * (c.posture === 'hike' ? 0.55 : 0.32)} stroke="var(--c-crew)" strokeWidth={0.12} strokeLinecap="round" />
                 )}
+                {isSel && <circle r={R + 0.16} fill="none" stroke="var(--c-crew)" strokeWidth={0.05} opacity={0.6} />}
                 <circle r={R + (isSel || isHover ? 0.05 : 0)} fill="var(--c-crew)" stroke={isSel ? 'var(--ink)' : '#fff'} strokeWidth={isSel ? 0.07 : 0.05} opacity={isDrag ? 0.85 : 1} />
                 <text y={0.02} fontSize={0.24} fill="#fff" fontWeight={700} textAnchor="middle" dominantBaseline="middle" transform={vertical ? 'rotate(-90)' : ''} style={{ pointerEvents: 'none' }}>{initials}</text>
               </g>
@@ -203,7 +205,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
         </g>
       </svg>
       <div className="legend">
-        <span>Drag a crew member to a slot · tap to select, then tap a slot · tap a selected windward-rail crew to cycle sitting → legs over → full hike · keyboard: Tab to a crew, arrows/Enter</span>
+        <span>Tap a crew member for their card · drag to a slot, or tap a slot while selected · tap a selected rail crew again to cycle posture</span>
         {sel && <span><b>{sel.name}</b>: {boat.slotById[sel.slot]?.label}{boat.slotById[sel.slot]?.kind === 'rail' ? ` · ${POSTURE_LABEL[sel.posture]}` : ''}</span>}
       </div>
     </div>

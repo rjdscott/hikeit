@@ -41,3 +41,25 @@ const ok = moved && bow && /Legs over/.test(posture || '') && errs.length === 0 
 await b.close()
 if (!ok) { console.error('E2E FAILED'); process.exit(1) }
 console.log('E2E OK')
+// --- sheet flow: open Crew 4's card, move via chip, change posture via segmented control ---
+{
+  const b2 = await chromium.launch({ executablePath: process.env.CHROME || undefined })
+  const q = await b2.newPage({ viewport: { width: 400, height: 800 } })
+  await q.goto(url, { waitUntil: 'networkidle' })
+  await q.locator('g.crew[aria-label^="Crew 4,"]').click()
+  await q.locator('.sheet').waitFor()
+  await q.locator('.sheet .btn', { hasText: 'Below decks' }).click()
+  await q.waitForTimeout(450)
+  const h1 = decodeURIComponent(q.url().split('#')[1] || '')
+  const okBelow = /(^|,)[^,]*?below\.0/.test(h1.split('crew=')[1] || '') && (h1.split('crew=')[1] || '').split(',')[3].startsWith('below')
+  await q.locator('.sheet .btn', { hasText: /^5/ }).first().click() // back to windward rail 5 (swap)
+  await q.waitForTimeout(100)
+  await q.locator('.seg button', { hasText: 'Full hike' }).click()
+  await q.waitForTimeout(450)
+  const h2 = decodeURIComponent(q.url().split('#')[1] || '')
+  const c4 = (h2.split('crew=')[1] || '').split(',')[3]
+  console.log(JSON.stringify({ okBelow, c4 }))
+  await b2.close()
+  if (!okBelow || c4 !== 'rail-w-4.2') { console.error('E2E SHEET FAILED'); process.exit(1) }
+  console.log('E2E SHEET OK')
+}
