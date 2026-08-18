@@ -100,6 +100,14 @@ export const LESSONS: LessonStep[] = [
     patch: () => ({ autoTrim: true, targetHeel: 20, tws: 14 }),
   },
   {
+    title: 'The puff — why you hike before it hits',
+    body: [
+      'A gust does not just move you to a new steady heel — the boat rolls past it. The keel and hull are heavy and slow (roll period about 4 s), so the heeling moment wins for a couple of seconds before the righting moment catches up: several degrees of overshoot, right when the helm loads up.',
+      'Press Puff! in the panel below and watch the stern view and the heel trace. Then pin this formation as A, send two people below, and puff again: the crew that was already out has margin; the crew that reacts after the puff is already at the rail rounding up.',
+    ],
+    patch: (s) => ({ tws: 12, autoTrim: false, flat: 0.85, crew: form(s, 'Racing: rail hiking') }),
+  },
+  {
     title: 'Reaching, and the fine print',
     body: [
       'Ease to a reach: the apparent wind goes aft and C_H falls, so the boat stands up — but each body on the rail is still worth about half a degree, sometimes more, because you are now on the stiff, low-heel part of the GZ curve where degrees are cheap. What changes is the payoff: reaching, drive comes from C_R and boat speed, not from holding heel. Hoist the Code 0 and the loads come straight back.',
