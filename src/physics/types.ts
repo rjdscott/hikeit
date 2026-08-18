@@ -52,8 +52,11 @@ export interface BoatJson {
   }
   sails: SailDef[]
   sailModes: SailMode[]
+  targets?: { upwind: Targets; downwind: Targets }
   polar: Polar
 }
+
+export interface Targets { tws: number[]; twa: number[]; bsp: number[]; bspProvisional?: boolean }
 
 /** A concrete place a crew member can occupy. y > 0 = windward. */
 export interface Slot {
@@ -93,8 +96,11 @@ export interface Boat {
   frac: number // IG/(P+BAS) for twist function
   hEff: number // effective rig span for induced drag
   chScale: number
+  targets?: { upwind: Targets; downwind: Targets }
   polar: Polar
 }
+
+export interface Targets { tws: number[]; twa: number[]; bsp: number[]; bspProvisional?: boolean }
 
 export const G = 9.81
 export const RHO_AIR = 1.225

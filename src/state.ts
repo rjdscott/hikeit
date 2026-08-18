@@ -9,6 +9,7 @@ export interface State {
   flat: number
   autoTrim: boolean
   targetHeel: number // deg
+  targetAngle: boolean // TWA follows the boat's target-speed card for the current TWS
   sailMode: string
   crew: Crew[]
   prevCrew: Crew[] | null // ghost formation for comparison
@@ -47,6 +48,7 @@ export const initialState = (): State => ({
   flat: 1,
   autoTrim: false,
   targetHeel: 20,
+  targetAngle: true,
   sailMode: xp44.sailModes[0].id,
   crew: defaultCrew().map((c, i) => ({ ...c, ...presets['Racing: rail sitting'](i) })),
   prevCrew: null,
@@ -92,7 +94,7 @@ export function encodeHash(s: State): string {
   const crew = s.crew.map((c) => `${c.slot}.${POST.indexOf(c.posture)}`).join(',')
   const p = new URLSearchParams({
     tws: String(s.tws), twa: String(s.twa), flat: s.flat.toFixed(2), at: s.autoTrim ? '1' : '0', th: String(s.targetHeel),
-    sm: s.sailMode, z: s.zPenalty ? '1' : '0', crew,
+    sm: s.sailMode, z: s.zPenalty ? '1' : '0', ta: s.targetAngle ? '1' : '0', crew,
   })
   if (s.lessonStep !== null) p.set('step', String(s.lessonStep))
   return '#' + p.toString()
@@ -110,6 +112,7 @@ export function decodeHash(hash: string, base: State, validSlots: Record<string,
     autoTrim: p.has('at') ? p.get('at') === '1' : base.autoTrim, targetHeel: num('th', base.targetHeel, 0, 45),
     sailMode: xp44.sailModes.some((m) => m.id === p.get('sm')) ? p.get('sm')! : base.sailMode,
     zPenalty: p.has('z') ? p.get('z') !== '0' : base.zPenalty,
+    targetAngle: p.has('ta') ? p.get('ta') === '1' : base.targetAngle,
     lessonStep: p.has('step') ? num('step', 0, 0, 20) : null,
   }
   const crewStr = p.get('crew')

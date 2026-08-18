@@ -3,7 +3,7 @@ import xp44 from './data/xp44.json'
 import type { State } from './state'
 import type { BoatJson, CrewPoint, Posture } from './physics/types'
 import { DEG } from './physics/types'
-import { boatSpeed, resolveBoat } from './physics/boat'
+import { boatSpeed, lerpTable, resolveBoat } from './physics/boat'
 import { combinedCg, crewMoment, crewPositions, rmCrew, rmHull } from './physics/stability'
 import { apparentWind, driveForce, heelForce, heelingArm, heelingMoment, sailCoeffs, type Wind } from './physics/aero'
 import { curves, equilibrium, solveFlat, twsAtHeel, windSweep, type Curves, type Equilibrium, type SweepPoint } from './physics/solve'
@@ -37,10 +37,21 @@ export interface Derived {
 }
 
 /** Pure compute pipeline from state → everything the UI shows. */
+/** TWA to sail at: the boat's target-speed card angle for this TWS (upwind mode), else the slider. */
+export function effectiveTwa(s: State, tws = s.tws): number {
+  const t = BOAT_JSON.targets?.upwind
+  if (s.targetAngle && s.sailMode === 'upwind' && t) return Math.round(lerpTable(t.tws, t.twa, tws))
+  return s.twa
+}
+
 export function derive(s: State): Derived {
   const boat = resolveBoat(BOAT_JSON, s.sailMode, s.overrides)
   const crewPts = crewPositions(s.crew, boat.slotById)
-  const windAt = (tws: number) => apparentWind(tws, s.twa, boatSpeed(boat.polar, tws, s.twa))
+  const twaAt = (tws: number) => effectiveTwa(s, tws)
+  const card = s.targetAngle && s.sailMode === 'upwind' ? BOAT_JSON.targets?.upwind : undefined
+  // boat speed: the target card's speed when sailing its angle, else the polar grid
+  const bspAt = (tws: number, twa: number) => (card ? lerpTable(card.tws, card.bsp, tws) : boatSpeed(boat.polar, tws, twa))
+  const windAt = (tws: number) => { const twa = twaAt(tws); return apparentWind(tws, twa, bspAt(tws, twa)) }
   const wind = windAt(s.tws)
   const base = { boat, crew: crewPts, wind, zPenalty: s.zPenalty }
   const trim = s.autoTrim ? solveFlat(base, s.targetHeel * DEG) : { flat: s.flat, trimLimited: false, underpowered: false }

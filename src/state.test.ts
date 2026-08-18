@@ -72,3 +72,16 @@ describe('round-2 review fixes', () => {
     delete g.localStorage
   })
 })
+
+describe('target-speed card', () => {
+  it('effectiveTwa follows the card upwind and the slider otherwise; hash round-trips the toggle', async () => {
+    const { effectiveTwa } = await import('./model')
+    const s = { ...initialState(), tws: 12, twa: 60, targetAngle: true }
+    expect(effectiveTwa(s)).toBe(37)
+    expect(effectiveTwa({ ...s, tws: 5 })).toBe(44)
+    expect(effectiveTwa({ ...s, targetAngle: false })).toBe(60)
+    expect(effectiveTwa({ ...s, sailMode: 'code0' })).toBe(60)
+    const d = decodeHash(encodeHash({ ...s, targetAngle: false }), initialState(), boat.slotById)
+    expect(d.targetAngle).toBe(false)
+  })
+})

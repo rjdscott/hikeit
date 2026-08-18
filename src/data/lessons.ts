@@ -17,7 +17,7 @@ export const LESSONS: LessonStep[] = [
       'Everyone below. Heel the boat and the keel and hull push back with a righting moment: RM = Δ·g·GZ. The navy curve on the moment chart is the boat\'s own righting moment against heel angle — steep at first (that slope is GM), peaking around 55–60°.',
       'On this Xp 44 the ORC certificate gives RM ≈ 260 kg·m per degree of heel near upright, so GM ≈ 1.5 m. Note the certificate already counts the crew\'s weight — on the centreline, about 1 m up. Where they sit is what we can change.',
     ],
-    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'upwind', crew: form(s, 'All below') }),
+    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'upwind', targetAngle: true, crew: form(s, 'All below') }),
   },
   {
     title: 'Wind pushes, the boat settles',
@@ -73,7 +73,7 @@ export const LESSONS: LessonStep[] = [
       'Ease to a reach: the apparent wind goes aft and C_H falls, so the boat stands up — but each body on the rail is still worth about half a degree, sometimes more, because you are now on the stiff, low-heel part of the GZ curve where degrees are cheap. What changes is the payoff: reaching, drive comes from C_R and boat speed, not from holding heel. Hoist the Code 0 and the loads come straight back.',
       'Fine print: ORC crew weight is declared and rated — extra bodies on the rail change your rating; RRS 49 sets the posture limits; and this is a static model (no gusts, waves or dynamics). Now play — everything stays live.',
     ],
-    patch: () => ({ twa: 75, tws: 14, autoTrim: false, flat: 1 }),
+    patch: () => ({ twa: 75, tws: 14, autoTrim: false, flat: 1, targetAngle: false }),
   },
 ]
 
