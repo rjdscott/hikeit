@@ -200,3 +200,13 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .quiz-slider .num { font-size: 1.1rem; font-weight: 600; min-width: 5em; text-align: right; }
 .quiz-result { background: var(--bg); border-left: 3px solid var(--c-ghost); padding: 6px 10px; border-radius: 6px; margin: 4px 0 6px; font-size: 0.9rem; }
 .quiz-result.good { border-left-color: #1a7f4b; }
+
+/* ---- mobile mini status bar ---- */
+.minibar { display: none; }
+@media (max-width: 900px) {
+  .minibar { display: flex; position: sticky; top: 0; z-index: 20; gap: 12px; justify-content: space-between; align-items: center; background: rgba(28,36,48,0.92); color: #fff; backdrop-filter: blur(6px); border-radius: 10px; padding: 6px 12px; margin: 0 0 10px; font-size: 0.78rem; }
+  .minibar b { font-size: 0.95rem; }
+  .minibar span { white-space: nowrap; }
+  .minibar span:last-child { display: none; }
+}
+@media (min-width: 520px) and (max-width: 900px) { .minibar span:last-child { display: inline; } }

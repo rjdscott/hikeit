@@ -144,8 +144,8 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
           <text x={0.05} y={-0.35} className="ml" fontSize={0.3} transform={vertical ? `rotate(-90 0.05 -0.35)` : ''}>bow</text>
           {vertical ? (
             <>
-              <text x={mastX - 2.6} y={-2.15} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 2.6} -2.15)`}>windward</text>
-              <text x={mastX - 2.6} y={2.15} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 2.6} 2.15)`}>leeward</text>
+              <text x={mastX - 1.4} y={-2.2} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 1.4} -2.2)`}>windward</text>
+              <text x={mastX - 1.4} y={2.2} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 1.4} 2.2)`}>leeward</text>
             </>
           ) : (
             <>

@@ -8,3 +8,7 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </React.StrictMode>,
 )
+
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  addEventListener('load', () => navigator.serviceWorker.register('/hikeit/sw.js').catch(() => { /* offline support is best-effort */ }))
+}

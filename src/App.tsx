@@ -84,6 +84,12 @@ function App() {
         </div>
       </header>
 
+      <div className="minibar" aria-hidden="true">
+        <span>Heel <b className="num">{d.eq.overpowered ? 'over' : d.phiDeg.toFixed(1) + '°'}</b></span>
+        <span>Crew <b className="num" style={{ color: 'var(--c-crew)' }}>{d.rmCrewEq >= 0 ? '+' : ''}{(d.rmCrewEq / 1e3).toFixed(1)}</b> kN·m</span>
+        <span>Free wind <b className="num">{d.freeWind === null ? '–' : (d.freeWind >= 0 ? '+' : '') + d.freeWind.toFixed(1)}</b> kn</span>
+        <span>{d.wind.tws.toFixed(0)} kn · flat <b className="num">{d.flat.toFixed(2)}</b></span>
+      </div>
       <div className="grid">
         {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} d={d} dispatch={dispatch} /></section>}
         <section className="panel area-deck">

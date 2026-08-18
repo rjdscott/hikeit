@@ -1,0 +1,14 @@
+{
+  "name": "hikeit — crew weight & righting moment",
+  "short_name": "hikeit",
+  "start_url": "/hikeit/",
+  "scope": "/hikeit/",
+  "display": "standalone",
+  "background_color": "#f6f5f1",
+  "theme_color": "#f6f5f1",
+  "icons": [
+    { "src": "/hikeit/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/hikeit/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/hikeit/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
