@@ -8,7 +8,7 @@ import { apparentWind, heelingArm, heelingMoment, sailCoeffs, zceEff } from './a
 import { curves, equilibrium, solveFlat, twsAtHeel, windSweep } from './solve'
 
 const json = xp44 as unknown as BoatJson
-const boat = resolveBoat(json, 'upwind')
+const boat = resolveBoat(json, 'j1')
 const crew = (slot: (i: number) => string, posture: 'sit' | 'legs' | 'hike' = 'sit', kg = 85) =>
   Array.from({ length: 10 }, (_, i) => ({ id: i, name: `C${i}`, kg, slot: slot(i), posture }))
 const railHike = crew((i) => (i < 8 ? `rail-w-${i}` : i === 8 ? 'helm-w' : 'trim-w'), 'hike')
@@ -44,16 +44,16 @@ describe('GZ parametric curve', () => {
 })
 
 describe('Xp44 stability defaults', () => {
-  it('GM from ORC RM1 260 kg·m/deg at 9700 kg ≈ 1.536 m and round-trips', () => {
-    expect(boat.gm).toBeCloseTo(1.536, 2)
+  it('GM from ORC RM1 265 kg·m/deg at 9750 kg ≈ 1.557 m and round-trips', () => {
+    expect(boat.gm).toBeCloseTo(1.557, 2)
     expect(rm1FromGm(gmFromRm1(260, 9700), 9700)).toBeCloseTo(260, 9)
   })
   it('RM_hull(20°) ≈ 47 kN·m (±5%)', () => {
     expect(rmHull(boat, 20 * DEG) / 1e3).toBeGreaterThan(44.6)
     expect(rmHull(boat, 20 * DEG) / 1e3).toBeLessThan(49.4)
   })
-  it('RM_hull at 1° ≈ 260 kg·m', () => {
-    expect(rmHull(boat, DEG) / G).toBeCloseTo(260, 0)
+  it('RM_hull at 1° ≈ 265 kg·m', () => {
+    expect(rmHull(boat, DEG) / G).toBeCloseTo(265, 0)
   })
 })
 

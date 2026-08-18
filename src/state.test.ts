@@ -4,7 +4,7 @@ import { resolveBoat } from './physics/boat'
 import xp44 from './data/xp44.json'
 import type { BoatJson } from './physics/types'
 
-const boat = resolveBoat(xp44 as unknown as BoatJson, 'upwind')
+const boat = resolveBoat(xp44 as unknown as BoatJson, 'j1')
 
 describe('reducer', () => {
   it('moveCrew swaps occupant on single slots, stacks on multi slots, records ghost', () => {

@@ -17,7 +17,7 @@ export const LESSONS: LessonStep[] = [
       'Everyone below. Heel the boat and the keel and hull push back with a righting moment: RM = Δ·g·GZ. The navy curve on the moment chart is the boat\'s own righting moment against heel angle — steep at first (that slope is GM), peaking around 55–60°.',
       'On this Xp 44 the ORC certificate gives RM ≈ 260 kg·m per degree of heel near upright, so GM ≈ 1.5 m. Note the certificate already counts the crew\'s weight — on the centreline, about 1 m up. Where they sit is what we can change.',
     ],
-    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'upwind', targetAngle: true, crew: form(s, 'All below') }),
+    patch: (s) => ({ tws: 10, twa: 40, flat: 1, autoTrim: false, zPenalty: true, sailMode: 'auto', targetAngle: true, crew: form(s, 'All below') }),
   },
   {
     title: 'Wind pushes, the boat settles',

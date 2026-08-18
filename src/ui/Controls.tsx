@@ -3,7 +3,8 @@ import { BOAT_JSON } from '../model'
 import { FLAT_MIN } from '../physics/aero'
 import { presets, type Action, type PresetName, type State } from '../state'
 import { fmt } from './svg'
-import { effectiveTwa } from '../model'
+import { effectiveTwa, isUpwindMode } from '../model'
+import { AUTO } from '../physics/sailplan'
 
 interface Props { s: State; d: Derived; dispatch: React.Dispatch<Action> }
 
@@ -21,24 +22,28 @@ function Range({ label, value, min, max, step, unit, onChange, disabled, digits 
 
 export default function Controls({ s, d, dispatch }: Props) {
   const patch = (p: Partial<State>) => dispatch({ type: 'patch', patch: p })
-  const mode = BOAT_JSON.sailModes.find((m) => m.id === s.sailMode) ?? BOAT_JSON.sailModes[0]
+  const mode = BOAT_JSON.sailModes.find((m) => m.id === d.sailModeId) ?? BOAT_JSON.sailModes[0]
+  const upwind = isUpwindMode(s.sailMode)
   return (
     <div>
       <div className="panel-head"><h2>Conditions</h2><span className="hint">AWS {fmt(d.wind.aws, 1)} kn · AWA {fmt(d.wind.awa, 0)}° · boat {fmt(d.wind.bsp, 1)} kn</span></div>
       <Range label="True wind speed" value={s.tws} min={4} max={30} step={0.5} unit="kn" onChange={(v) => patch({ tws: v })} />
-      {BOAT_JSON.targets && s.sailMode === 'upwind' && (
+      {BOAT_JSON.targets && upwind && (
         <label className="toggle"><input type="checkbox" checked={s.targetAngle} onChange={(e) => patch({ targetAngle: e.target.checked, twa: effectiveTwa(s) })} /> Sail the target angle from the cockpit card (TWA {effectiveTwa({ ...s, targetAngle: true })}° at {fmt(s.tws, 0)} kn)</label>
       )}
-      <Range label="True wind angle" value={effectiveTwa(s)} min={mode.twa[0]} max={mode.twa[1]} step={1} unit="°" disabled={s.targetAngle && s.sailMode === 'upwind' && !!BOAT_JSON.targets} onChange={(v) => patch({ twa: v })} />
+      <Range label="True wind angle" value={effectiveTwa(s)} min={mode.twa[0]} max={mode.twa[1]} step={1} unit="°" disabled={s.targetAngle && upwind && !!BOAT_JSON.targets} onChange={(v) => patch({ twa: v })} />
       <div className="field">
         <label>Sails</label>
         <select className="sel" value={s.sailMode} onChange={(e) => {
-          const m = BOAT_JSON.sailModes.find((x) => x.id === e.target.value)!
-          patch({ sailMode: m.id, twa: Math.min(m.twa[1], Math.max(m.twa[0], s.twa)) })
+          const id = e.target.value
+          const m = BOAT_JSON.sailModes.find((x) => x.id === id) ?? BOAT_JSON.sailModes[0]
+          patch({ sailMode: id, twa: Math.min(m.twa[1], Math.max(m.twa[0], s.twa)), ...(id === AUTO ? { autoTrim: true } : {}) })
         }} aria-label="Sail combination">
+          <option value={AUTO}>Auto — crew changes down to hold {s.targetHeel}°</option>
           {BOAT_JSON.sailModes.map((m) => <option key={m.id} value={m.id}>{m.label}</option>)}
         </select>
       </div>
+      {s.sailMode === AUTO && <p className="small muted" style={{ marginTop: -4 }}>Flying: <b>{mode.label}</b> — largest combination that holds {s.targetHeel}° with flat ≥ 0.7.</p>}
       <label className="toggle"><input type="checkbox" checked={s.autoTrim} onChange={(e) => patch({ autoTrim: e.target.checked })} /> Trimmers hold a target heel (auto-depower)</label>
       {s.autoTrim
         ? <Range label="Target heel" value={s.targetHeel} min={5} max={35} step={1} unit="°" onChange={(v) => patch({ targetHeel: v })} />

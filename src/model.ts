@@ -7,12 +7,14 @@ import { boatSpeed, lerpTable, resolveBoat } from './physics/boat'
 import { combinedCg, crewMoment, crewPositions, rmCrew, rmHull } from './physics/stability'
 import { apparentWind, driveForce, heelForce, heelingArm, heelingMoment, sailCoeffs, type Wind } from './physics/aero'
 import { curves, equilibrium, solveFlat, twsAtHeel, windSweep, type Curves, type Equilibrium, type SweepPoint } from './physics/solve'
+import { AUTO, selectSailMode } from './physics/sailplan'
 
 export const BOAT_JSON = xp44 as unknown as BoatJson
 export const SWEEP_TWS = Array.from({ length: 27 }, (_, i) => 4 + i) // 4..30 kn
 
 export interface Derived {
   boat: ReturnType<typeof resolveBoat>
+  sailModeId: string // resolved (auto → concrete)
   crewPts: CrewPoint[]
   wind: Wind
   flat: number
@@ -37,21 +39,28 @@ export interface Derived {
 }
 
 /** Pure compute pipeline from state → everything the UI shows. */
-/** TWA to sail at: the boat's target-speed card angle for this TWS (upwind mode), else the slider. */
+/** Upwind = any ranked (auto-selectable) sail mode, or auto itself. */
+export const isUpwindMode = (id: string) => id === AUTO || BOAT_JSON.sailModes.some((m) => m.id === id && m.rank !== undefined)
+
+/** TWA to sail at: the boat's target-speed card angle for this TWS (upwind), else the slider. */
 export function effectiveTwa(s: State, tws = s.tws): number {
   const t = BOAT_JSON.targets?.upwind
-  if (s.targetAngle && s.sailMode === 'upwind' && t) return Math.round(lerpTable(t.tws, t.twa, tws))
+  if (s.targetAngle && isUpwindMode(s.sailMode) && t) return Math.round(lerpTable(t.tws, t.twa, tws))
   return s.twa
 }
 
 export function derive(s: State): Derived {
-  const boat = resolveBoat(BOAT_JSON, s.sailMode, s.overrides)
-  const crewPts = crewPositions(s.crew, boat.slotById)
   const twaAt = (tws: number) => effectiveTwa(s, tws)
-  const card = s.targetAngle && s.sailMode === 'upwind' ? BOAT_JSON.targets?.upwind : undefined
-  // boat speed: the target card's speed when sailing its angle, else the polar grid
-  const bspAt = (tws: number, twa: number) => (card ? lerpTable(card.tws, card.bsp, tws) : boatSpeed(boat.polar, tws, twa))
-  const windAt = (tws: number) => { const twa = twaAt(tws); return apparentWind(tws, twa, bspAt(tws, twa)) }
+  const card = s.targetAngle && isUpwindMode(s.sailMode) ? BOAT_JSON.targets?.upwind : undefined
+  const bspAt0 = (polar: typeof BOAT_JSON.polar, tws: number, twa: number) => (card ? lerpTable(card.tws, card.bsp, tws) : boatSpeed(polar, tws, twa))
+  const windFor = (json: typeof BOAT_JSON, _mode: string, tws = s.tws) => { const twa = twaAt(tws); return apparentWind(tws, twa, bspAt0(json.polar, tws, twa)) }
+  const slots0 = resolveBoat(BOAT_JSON, BOAT_JSON.sailModes[0].id, s.overrides).slotById
+  const crewPts = crewPositions(s.crew, slots0)
+  const sailModeId = s.sailMode === AUTO
+    ? selectSailMode(BOAT_JSON, (j, m) => windFor(j, m), crewPts, s.targetHeel * DEG, s.zPenalty, s.overrides)
+    : s.sailMode
+  const boat = resolveBoat(BOAT_JSON, sailModeId, s.overrides)
+  const windAt = (tws: number) => windFor(BOAT_JSON, sailModeId, tws)
   const wind = windAt(s.tws)
   const base = { boat, crew: crewPts, wind, zPenalty: s.zPenalty }
   const trim = s.autoTrim ? solveFlat(base, s.targetHeel * DEG) : { flat: s.flat, trimLimited: false, underpowered: false }
@@ -88,7 +97,7 @@ export function derive(s: State): Derived {
     return [po, { rmCrew: rmCrew(pts, e.phi, boat.zCrew0, s.zPenalty), phiDeg: e.phi / DEG, overpowered: e.overpowered, freeWind: t !== null && tb !== null ? t - tb : null, flatReq: tr?.flat ?? null, drive }]
   })) as Derived['postures']
   return {
-    boat, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
+    boat, sailModeId, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,
     curves: cv, eq, phiDeg: phi / DEG, ghost, sweep, sweepBase,
     freeWind: ta !== null && tb !== null ? ta - tb : null,
     rmHullEq, rmCrewEq, rmTotalEq: rmHullEq + rmCrewEq, hmEq: heelingMoment(boat, wind, trim.flat, phi),

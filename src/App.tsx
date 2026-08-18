@@ -13,7 +13,7 @@ import Lesson from './ui/Lesson'
 import PosturePanel from './ui/Posture'
 
 const Equations = lazy(() => import('./ui/Equations'))
-const SLOTS = resolveBoat(BOAT_JSON, 'upwind').slotById
+const SLOTS = resolveBoat(BOAT_JSON, BOAT_JSON.sailModes[0].id).slotById
 
 function fromHash(hash: string, base: State): State {
   const s0 = decodeHash(hash, base, SLOTS)

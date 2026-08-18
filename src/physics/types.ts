@@ -15,6 +15,7 @@ export interface SailMode {
   label: string
   sails: string[]
   twa: [number, number]
+  rank?: number // depower order for auto selection (0 = most sail); undefined = not auto-selectable
 }
 
 export interface Polar {

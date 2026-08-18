@@ -5,7 +5,7 @@ import { resolveBoat } from '../physics/boat'
 import xp44 from './xp44.json'
 import type { BoatJson } from '../physics/types'
 
-const boat = resolveBoat(xp44 as unknown as BoatJson, 'upwind')
+const boat = resolveBoat(xp44 as unknown as BoatJson, 'j1')
 
 describe('lessons', () => {
   it('every step patch yields valid slots and the cumulative state for step 6 has auto-trim on', () => {
