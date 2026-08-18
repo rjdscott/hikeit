@@ -18,3 +18,4 @@
 | [0014](0014-pinned-ab-compare-and-quiz.md) | Pinned A/B comparison, predict-then-reveal quiz, PWA + MIT |
 
 Format: Title, Status, Date, Context, Decision, Consequences. Research backing these decisions is in [../research](../research/README.md); the approved implementation plan is in [../plans](../plans/).
+- [0015 — Quality gates in CI](0015-quality-gates-ci.md) — lint, unit, e2e + axe before deploy
