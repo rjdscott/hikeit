@@ -76,7 +76,7 @@ function App() {
       <div className="grid">
         {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} dispatch={dispatch} /></section>}
         <section className="panel area-deck">
-          <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the top · drag crew to slots</span></div>
+          <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the red arrow (windward side) · drag crew to slots</span></div>
           <DeckPlan boat={d.boat} crew={s.crew} hover={hover} onHover={setHover}
             onMove={(id, slot) => dispatch({ type: 'moveCrew', id, slot })}
             onPosture={(id, posture) => dispatch({ type: 'setCrew', id, patch: { posture } })} />

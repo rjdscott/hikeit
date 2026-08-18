@@ -44,3 +44,13 @@ describe('URL hash', () => {
     expect(d.tws).toBe(10); expect(d.twa).toBe(180); expect(d.crew[0].slot).toBe(initialState().crew[0].slot)
   })
 })
+
+describe('railPosture + helpers', () => {
+  it('railPosture sets posture only for crew on rail slots and records ghost', () => {
+    let s = reducer(initialState(), { type: 'preset', name: 'Racing: rail sitting' })
+    const railSlots = new Set(boat.slots.filter((x) => x.kind === 'rail').map((x) => x.id))
+    s = reducer(s, { type: 'railPosture', posture: 'hike', railSlots })
+    for (const c of s.crew) expect(c.posture).toBe(railSlots.has(c.slot) ? 'hike' : 'sit')
+    expect(s.prevCrew).not.toBeNull()
+  })
+})
