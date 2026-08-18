@@ -1,6 +1,6 @@
 # ADR-0007 — Heeling moment, depowering, and drive-force payoff
 
-**Status:** Accepted  
+**Status:** Accepted (amended 2026-08-18 after adversarial reviews 1–2)  
 **Date:** 2026-08-18
 
 ## Context
@@ -13,6 +13,12 @@ To show the trade-off between crew righting moment and wind strength, the model 
 - Apparent wind from true wind + boat speed vector; boat speed from the seed polar table (bilinear interpolation).
 - Equilibrium heel by bisection on `RM_total(φ) − HM(φ)`; no root → "overpowered" state. **Auto-trim** mode solves `flat` by bisection so heel equals a target (default 20°) and flags "trim-limited" at the 0.42 floor.
 - The payoff of hiking is shown as **drive force** `F_R = ½ ρ V_aw² A C_R`, `C_R = C_L sin β − C_D cos β`, from the same coefficients — instead of a speculative heel-penalty speed heuristic.
+
+## Amendments (2026-08-18)
+- **Twist datum:** ORC eq 5.49/5.57 twist the sail plan above the sheer and add the freeboard afterwards. `heelingArm = zceEff(Z_CE − freeboard, flat, frac) + freeboard + 0.43·T`; the freeboard no longer shrinks with `flat` (was up to 4 % optimistic at flat 0.42).
+- **Parasite drag:** ORC quadratic parasite term `KPP` per sail (main 0.0138, jib 0.016, Code 0 0.019, area-weighted) replaces the flat 0.005.
+- **Effective span:** ORC `kheff(AWA)` factor (≈ 1.45 at 20° → 0.80 at 80°) applied to the geometric span in the induced-drag term.
+- Reefing/headsail changes now handled by the sail inventory (ADR-0013); `flat` remains the fine depower.
 
 ## Consequences
 - One consistent aerodynamic model gives heel, heeling moment and drive; "hiking = free wind" and "hiking = more power at target heel" both fall out of it.
