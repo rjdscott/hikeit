@@ -1,6 +1,6 @@
 # hikeit implementation plan
 
-**Status:** Approved 2026-08-18 (plan mode); implementation in progress. Source of truth for decisions: [ADRs](../adr/README.md).
+**Status:** Done — shipped 2026-08-18 to https://rjdscott.github.io/hikeit/ (all phases; adversarial reviews logged in [docs/reviews](../reviews/)). Source of truth for decisions: [ADRs](../adr/README.md).
 
 ---
 
