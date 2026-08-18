@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import type { Derived } from '../model'
 import { DEG } from '../physics/types'
 import { defaultRoll, rollPeriod, simulatePuff, type Trajectory } from '../physics/dynamics'

@@ -63,3 +63,36 @@ console.log('E2E OK')
   if (!okBelow || c4 !== 'rail-w-4.2') { console.error('E2E SHEET FAILED'); process.exit(1) }
   console.log('E2E SHEET OK')
 }
+// --- accessibility (axe) on desktop + phone, and phone quiz/puff smoke ---
+{
+  const { default: AxeBuilder } = await import('@axe-core/playwright')
+  const b3 = await chromium.launch({ executablePath: process.env.CHROME || undefined })
+  let violations = []
+  for (const width of [1380, 400]) {
+    const ctx = await b3.newContext({ viewport: { width, height: 900 } })
+    const q = await ctx.newPage()
+    await q.goto(url, { waitUntil: 'load' })
+    await q.waitForTimeout(500)
+    const res = await new AxeBuilder({ page: q }).withTags(['wcag2a', 'wcag2aa']).exclude('.katex').analyze()
+    violations.push(...res.violations.map((v) => `${width}px ${v.id} (${v.impact}): ${v.nodes.length} × ${v.help}`))
+    if (width === 400) {
+      // quiz + puff on the phone
+      await q.getByRole('button', { name: 'Start the lesson' }).click()
+      await q.getByRole('button', { name: 'Next →' }).click()
+      await q.getByRole('button', { name: 'Next: predict →' }).click()
+      await q.locator('.quiz-slider input').fill('4')
+      await q.getByRole('button', { name: 'Reveal →' }).click()
+      await q.locator('.quiz-result').waitFor()
+      await q.getByRole('button', { name: 'Puff!' }).click()
+      await q.waitForTimeout(600)
+      const tracePts = await q.locator('svg[aria-label="Heel angle during the puff"] path').count()
+      if (tracePts < 1) { console.error('E2E PHONE PUFF FAILED'); process.exit(1) }
+    }
+    await ctx.close()
+  }
+  await b3.close()
+  const serious = violations.filter((v) => /critical|serious/.test(v))
+  console.log('axe:', violations.length ? violations.join('\n') : 'no violations')
+  if (serious.length) { console.error('E2E A11Y FAILED'); process.exit(1) }
+  console.log('E2E PHONE + A11Y OK')
+}

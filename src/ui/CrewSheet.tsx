@@ -26,8 +26,9 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
   const maxAbs = Math.max(1, ...d.perCrew.map((x) => Math.abs(x.moment)))
   const rootRef = useRef<HTMLDivElement>(null)
   const openerRef = useRef<Element | null>(null)
-  const [kg, setKg] = useState<string | null>(null)
-  useEffect(() => setKg(null), [id])
+  const [kgDraft, setKgDraft] = useState<{ id: number; txt: string } | null>(null)
+  const kg = kgDraft && kgDraft.id === id ? kgDraft.txt : null
+  const setKg = (txt: string | null) => setKgDraft(txt === null ? null : { id, txt })
   // focus management: move focus into the dialog on open, restore to the opener on close
   useEffect(() => {
     openerRef.current = document.activeElement
@@ -63,7 +64,7 @@ export default function CrewSheet({ id, s, d, dispatch, onClose, onSelect }: {
       </div>
       <div className="sheet-now">
         <span><b>{slot?.label}</b>{wRail ? ` · ${POSTURE_LABEL[c.posture]}` : ''} · arm {p.y >= 0 ? '+' : ''}{fmt(p.y, 2)} m</span>
-        <span className="num" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)} kN·m</span>
+        <span className="num" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew-ink)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)} kN·m</span>
         <span className="bar"><i style={{ width: `${(100 * Math.abs(p.moment)) / maxAbs}%`, background: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)' }} /></span>
       </div>
       {wRail && (

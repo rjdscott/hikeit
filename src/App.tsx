@@ -43,7 +43,8 @@ class Boundary extends Component<{ children: ReactNode }, { err: Error | null }>
 function App() {
   const [s, dispatch] = useReducer(reducer, undefined, init)
   const d0 = useDerived(s)
-  const dA = useMemo(() => (s.pinned ? derive({ ...s, ...s.pinned, pinned: null }) : null), [s.pinned])
+  const pinned = s.pinned
+  const dA = useMemo(() => (pinned ? derive({ ...initialState(), ...pinned, pinned: null }) : null), [pinned])
   // when A is pinned, the ghost curve/marker is A rather than the previous formation
   const d = useMemo(() => (dA ? { ...d0, ghost: { curves: dA.curves, eq: dA.eq, flat: dA.flat } } : d0), [d0, dA])
   const [hover, setHover] = useState<number | null>(null)
@@ -51,8 +52,10 @@ function App() {
   usePuffCleanup()
   const [copied, setCopied] = useState(false)
 
-  const sRef = useRef(s); sRef.current = s
-  useEffect(() => { saveLocal(s) }, [s.crew])
+  const sRef = useRef(s)
+  useEffect(() => { sRef.current = s })
+  const crew = s.crew
+  useEffect(() => { saveLocal({ ...sRef.current, crew }) }, [crew])
   // state → URL (debounced: Safari throttles replaceState) and URL → state on hashchange
   useEffect(() => {
     const t = setTimeout(() => { const h = encodeHash(s); if (location.hash !== h) try { history.replaceState(null, '', h) } catch { /* throttled */ } }, 250)
@@ -95,7 +98,7 @@ function App() {
 
       <div className="minibar" aria-hidden="true">
         <span>Heel <b className="num">{d.eq.overpowered ? 'over' : d.phiDeg.toFixed(1) + '°'}</b></span>
-        <span>Crew <b className="num" style={{ color: 'var(--c-crew)' }}>{d.rmCrewEq >= 0 ? '+' : ''}{(d.rmCrewEq / 1e3).toFixed(1)}</b> kN·m</span>
+        <span>Crew <b className="num" style={{ color: 'var(--c-crew-light)' }}>{d.rmCrewEq >= 0 ? '+' : ''}{(d.rmCrewEq / 1e3).toFixed(1)}</b> kN·m</span>
         <span>Free wind <b className="num">{d.freeWind === null ? '–' : (d.freeWind >= 0 ? '+' : '') + d.freeWind.toFixed(1)}</b> kn</span>
         <span>{d.wind.tws.toFixed(0)} kn · flat <b className="num">{d.flat.toFixed(2)}</b></span>
       </div>

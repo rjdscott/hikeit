@@ -17,21 +17,20 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
   const i = s.lessonStep
   const [pending, setPending] = useState<Pending | null>(null)
   const [results, setResults] = useState<Result[]>(loadResults)
-  if (i === null) return null
-  const step = LESSONS[i]
-  if (!step) return null
+  const step = i === null ? null : LESSONS[i]
   const goDirect = (n: number) => {
-    if (n < 0) return
+    if (i === null || n < 0) return
     if (n >= LESSONS.length) { dispatch({ type: 'lesson', step: null }); return }
     dispatch({ type: 'lesson', step: n, patch: Math.abs(n - i) === 1 ? LESSONS[n].patch(s) : lessonStateAt(s, n) })
   }
   const go = (n: number) => {
+    if (i === null) return
     const q = LESSONS[n]?.quiz
     if (q && n === i + 1) { setPending({ step: n, guess: null }); return }
     setPending(null); goDirect(n)
   }
   const reveal = () => {
-    if (!pending || pending.guess === null) return
+    if (i === null || !pending || pending.guess === null) return
     const target = LESSONS[pending.step]
     // same sail plan before/after: an auto sail change would mask the crew effect
     const after = derive({ ...s, ...target.patch(s), sailMode: s.sailMode === 'auto' ? d.sailModeId : s.sailMode })
@@ -45,11 +44,13 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
     const k = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement)?.tagName
       if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+      if (i === null) return
       if (e.key === 'ArrowRight') { e.preventDefault(); if (pending) { if (pending.guess !== null) reveal() } else go(i + 1) }
       if (e.key === 'ArrowLeft') { e.preventDefault(); if (pending) setPending(null); else go(i - 1) }
     }
     addEventListener('keydown', k); return () => removeEventListener('keydown', k)
   })
+  if (i === null || !step) return null
   const result = results.find((r) => r.step === i)
   const q = pending ? LESSONS[pending.step].quiz! : null
   const score = results.filter((r) => LESSONS[r.step]?.quiz && Math.abs(r.guess - r.answer) <= (LESSONS[r.step].quiz!.max - LESSONS[r.step].quiz!.min) * 0.15).length

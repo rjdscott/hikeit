@@ -80,7 +80,7 @@ export const MomentChart = memo(function MomentChart({ d, hover }: { d: Derived;
                 <rect width={158} height={64} rx={6} fill="#fff" stroke="var(--line)" />
                 <text x={8} y={16} fontSize={11} fill="var(--muted)">at φ = {i}°</text>
                 <text x={8} y={31} fontSize={11.5} fill="var(--c-hull)" className="num">RM hull {fmt(hull[i], 1)}</text>
-                <text x={8} y={45} fontSize={11.5} fill="var(--c-crew)" className="num">RM hull+crew {fmt(tot[i], 1)}</text>
+                <text x={8} y={45} fontSize={11.5} fill="var(--c-crew-ink)" className="num">RM hull+crew {fmt(tot[i], 1)}</text>
                 <text x={8} y={59} fontSize={11.5} fill="var(--c-sail)" className="num">HM {fmt(c.hm[i] / 1e3, 1)}</text>
               </g>
             </g>
@@ -143,7 +143,7 @@ export const WindSweepChart = memo(function WindSweepChart({ d, tws, targetHeel 
           )}
           {fw !== null && (
             <g>
-              <text x={w - M.r - 4} y={H - M.b - 22} textAnchor="end" fontSize={12.5} fontWeight={600} fill="var(--c-crew)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>free wind: {fw >= 0 ? '+' : ''}{fmt(fw, 1)} kn</text>
+              <text x={w - M.r - 4} y={H - M.b - 22} textAnchor="end" fontSize={12.5} fontWeight={600} fill="var(--c-crew-ink)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>free wind: {fw >= 0 ? '+' : ''}{fmt(fw, 1)} kn</text>
               <text x={w - M.r - 4} y={H - M.b - 8} textAnchor="end" fontSize={11} fill="var(--muted)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>extra TWS at {targetHeel}° heel vs. all crew inboard</text>
             </g>
           )}
@@ -155,7 +155,7 @@ export const WindSweepChart = memo(function WindSweepChart({ d, tws, targetHeel 
               <g transform={`translate(${sx(hx!) + (hx! > 20 ? -150 : 12)}, ${H - M.b - 66})`}>
                 <rect width={140} height={50} rx={6} fill="#fff" stroke="var(--line)" />
                 <text x={8} y={16} fontSize={11} fill="var(--muted)">TWS {hx} kn</text>
-                <text x={8} y={31} fontSize={11.5} fill="var(--c-crew)" className="num">this formation {d.sweep[i].overpowered ? 'overpowered' : fmt(cur[i], 1) + '°'}</text>
+                <text x={8} y={31} fontSize={11.5} fill="var(--c-crew-ink)" className="num">this formation {d.sweep[i].overpowered ? 'overpowered' : fmt(cur[i], 1) + '°'}</text>
                 <text x={8} y={45} fontSize={11.5} fill="var(--c-ghost)" className="num">all inboard {d.sweepBase[i].overpowered ? 'overpowered' : fmt(base[i], 1) + '°'}</text>
               </g>
             </g>

@@ -44,7 +44,7 @@ export default function PosturePanel({ s, d, dispatch }: { s: State; d: Derived;
                   <tr key={po} style={{ fontWeight: current === po ? 600 : 400 }}>
                     <td>{POSTURE_LABEL[po]}<div className="small muted" style={{ fontWeight: 400 }}>{DESC[po]}</div></td>
                     <td className="num mob-hide">+{fmt(POSTURE_OFFSET[po], 1)} m</td>
-                    <td className="num" style={{ color: 'var(--c-crew)' }}>{r.rmCrew >= 0 ? '+' : ''}{kNm(r.rmCrew)} kN·m</td>
+                    <td className="num" style={{ color: 'var(--c-crew-ink)' }}>{r.rmCrew >= 0 ? '+' : ''}{kNm(r.rmCrew)} kN·m</td>
                     {s.autoTrim ? (
                       <>
                         <td className="num">{r.flatReq === null ? '–' : fmt(r.flatReq, 2)}</td>

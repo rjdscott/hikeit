@@ -12,7 +12,7 @@ function Range({ label, value, min, max, step, unit, onChange, disabled, digits 
   label: string; value: number; min: number; max: number; step: number; unit: string; onChange: (v: number) => void; disabled?: boolean; digits?: number
 }) {
   return (
-    <div className="field" style={{ opacity: disabled ? 0.5 : 1 }}>
+    <div className={`field${disabled ? ' disabled' : ''}`}>
       <label>{label}</label>
       <span className="val">{fmt(value, digits)} {unit}</span>
       <input type="range" min={min} max={max} step={step} value={value} disabled={disabled} onChange={(e) => onChange(Number(e.target.value))} aria-label={label} />

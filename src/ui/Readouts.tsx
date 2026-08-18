@@ -1,5 +1,5 @@
 import type { Derived } from '../model'
-import type { Action, State } from '../state'
+import type { State } from '../state'
 import { POSTURE_LABEL } from '../physics/types'
 import { initials } from './CrewSheet'
 import { fmt, kNm } from './svg'
@@ -33,12 +33,12 @@ export function CrewList({ s, d, hover, selected, onHover, onSelect }: { s: Stat
           const slot = d.boat.slotById[c.slot]
           const wRail = slot?.kind === 'rail' && slot.side === 'w'
           return (
-            <li key={c.id} className={`${hover === c.id ? 'hover' : ''} ${selected === c.id ? 'on' : ''}`} onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} onClick={() => onSelect(c.id)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(c.id) } }} aria-label={`${c.name}, ${slot?.label}, ${kNm(p.moment, 2)} kilonewton metres`}>
+            <li key={c.id}><div className={`row ${hover === c.id ? 'hover' : ''} ${selected === c.id ? 'on' : ''}`} onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} onClick={() => onSelect(c.id)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(c.id) } }} aria-label={`${c.name}, ${slot?.label}, ${kNm(p.moment, 2)} kilonewton metres`}>
               <span className="avatar">{initials(c.name, c.id)}</span>
               <div className="who"><b>{c.name} <span className="num">{c.kg} kg</span></b><span>{slot?.label}{wRail ? ` · ${POSTURE_LABEL[c.posture]}` : ''} · arm {p.y >= 0 ? '+' : ''}{fmt(p.y, 2)} m</span></div>
-              <span className="val" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)}</span>
+              <span className="val" style={{ color: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew-ink)', fontWeight: 600 }}>{p.moment >= 0 ? '+' : ''}{kNm(p.moment, 2)}</span>
               <span className="bar"><i style={{ width: `${(100 * Math.abs(p.moment)) / maxAbs}%`, background: p.moment < 0 ? 'var(--c-sail)' : 'var(--c-crew)' }} /></span>
-            </li>
+            </div></li>
           )
         })}
       </ul>

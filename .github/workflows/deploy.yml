@@ -20,8 +20,16 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
       - run: npm test
-      - run: npm run build
+      - run: npx vite build
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - name: End-to-end + accessibility (axe) against the production build
+        run: |
+          npx vite preview --port 4173 --strictPort &
+          npx wait-on http://localhost:4173/hikeit/ --timeout 30000 || sleep 5
+          node scripts/e2e.mjs http://localhost:4173/hikeit/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

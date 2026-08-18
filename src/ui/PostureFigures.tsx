@@ -35,7 +35,7 @@ export function PostureFigures({ boat, current }: { boat: Boat; current: Posture
             <circle cx={X(y)} cy={Y(z)} r={0.07} fill="var(--c-crew)" stroke="#fff" strokeWidth={0.02} />
             <line x1={X(y)} y1={Y(z)} x2={X(y)} y2={H - 0.3} stroke="var(--c-crew)" strokeWidth={0.02} strokeDasharray="0.06 0.05" />
             <line x1={X(0)} y1={H - 0.32} x2={X(y)} y2={H - 0.32} stroke="var(--c-crew)" strokeWidth={0.04} />
-            <text x={X(y / 2)} y={H - 0.1} fontSize={0.19} fontWeight={600} textAnchor="middle" fill="var(--c-crew)" className="num">y = {fmt(y, 2)} m</text>
+            <text x={X(y / 2)} y={H - 0.1} fontSize={0.19} fontWeight={600} textAnchor="middle" fill="var(--c-crew-ink)" className="num">y = {fmt(y, 2)} m</text>
             <text x={i * W + 0.15} y={0.3} fontSize={0.19} fontWeight={600} fill="var(--ink)">{POSTURE_LABEL[po]}</text>
           </g>
         )

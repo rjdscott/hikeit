@@ -8,7 +8,7 @@ import { fmt } from './svg'
 const Eq = memo(function Eq({ tex, cap }: { tex: string; cap: string }) {
   return (
     <div>
-      <div dangerouslySetInnerHTML={{ __html: katex.renderToString(tex, { displayMode: true, throwOnError: false }) }} />
+      <div className="eq-wrap" tabIndex={0} dangerouslySetInnerHTML={{ __html: katex.renderToString(tex, { displayMode: true, throwOnError: false }) }} />
       <div className="cap">{cap}</div>
     </div>
   )

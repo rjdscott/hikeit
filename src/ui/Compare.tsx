@@ -1,7 +1,7 @@
 import type { Derived } from '../model'
 import { BOAT_JSON } from '../model'
 import type { Action, State } from '../state'
-import { fmt, kNm } from './svg'
+import { fmt } from './svg'
 
 const Row = ({ k, a, b, unit, better, na = '–' }: { k: string; a: number | null; b: number | null; unit: string; better?: 'up' | 'down'; na?: string }) => {
   const digits = unit === 'cm' ? 0 : unit === '°' || unit === 'kn' || unit === 'kN·m' ? 1 : 2
