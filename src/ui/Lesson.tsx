@@ -1,4 +1,4 @@
-import { LESSONS } from '../data/lessons'
+import { LESSONS, lessonStateAt } from '../data/lessons'
 import type { Action, State } from '../state'
 
 export default function Lesson({ s, dispatch }: { s: State; dispatch: React.Dispatch<Action> }) {
@@ -9,7 +9,8 @@ export default function Lesson({ s, dispatch }: { s: State; dispatch: React.Disp
   const go = (n: number) => {
     if (n < 0) return
     if (n >= LESSONS.length) { dispatch({ type: 'lesson', step: null }); return }
-    dispatch({ type: 'lesson', step: n, patch: LESSONS[n].patch(s) })
+    // forward/back one step: apply just that step; jumping via dots: fold all steps up to it
+    dispatch({ type: 'lesson', step: n, patch: Math.abs(n - i) === 1 ? LESSONS[n].patch(s) : lessonStateAt(s, n) })
   }
   return (
     <div className="lesson">

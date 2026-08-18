@@ -1,8 +1,8 @@
 import { Component, lazy, Suspense, useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
-import { decodeHash, encodeHash, initialState, loadLocal, reducer, saveLocal, type State } from './state'
+import { clearLocal, decodeHash, encodeHash, initialState, loadLocal, reducer, saveLocal, type State } from './state'
 import { BOAT_JSON, useDerived } from './model'
 import { resolveBoat } from './physics/boat'
-import { LESSONS } from './data/lessons'
+import { LESSONS, lessonStateAt } from './data/lessons'
 import DeckPlan from './ui/DeckPlan'
 import HeelSection from './ui/HeelSection'
 import { MomentChart, WindSweepChart } from './ui/Charts'
@@ -21,7 +21,7 @@ function fromHash(hash: string, base: State): State {
   if (step === null) return s0
   if (!Number.isInteger(step) || !LESSONS[step]) return { ...s0, lessonStep: null }
   // lesson step supplies defaults; anything explicit in the URL wins
-  return decodeHash(hash, { ...base, ...LESSONS[step].patch(base) }, SLOTS)
+  return decodeHash(hash, { ...base, ...lessonStateAt(base, step) }, SLOTS)
 }
 const init = (): State => fromHash(typeof location !== 'undefined' ? location.hash : '', loadLocal(initialState()))
 
@@ -29,7 +29,7 @@ class Boundary extends Component<{ children: ReactNode }, { err: Error | null }>
   state = { err: null as Error | null }
   static getDerivedStateFromError(err: Error) { return { err } }
   render() {
-    if (this.state.err) return <div className="app"><div className="panel"><h2>Something broke</h2><p className="small">{String(this.state.err.message)}</p><button className="btn" onClick={() => { location.hash = ''; location.reload() }}>Reset and reload</button></div></div>
+    if (this.state.err) return <div className="app"><div className="panel"><h2>Something broke</h2><p className="small">{String(this.state.err.message)}</p><button className="btn" onClick={() => { clearLocal(); location.hash = ''; location.reload() }}>Reset and reload</button></div></div>
     return this.props.children
   }
 }
@@ -58,7 +58,7 @@ function App() {
   }
   const railCrew = s.crew.filter((c) => d.boat.slotById[c.slot]?.kind === 'rail' && d.boat.slotById[c.slot].side === 'w')
   const railPosture = railCrew.length ? railCrew.map((c) => c.posture).sort((a, b) => railCrew.filter((c) => c.posture === b).length - railCrew.filter((c) => c.posture === a).length)[0] : null
-  const startLesson = () => dispatch({ type: 'lesson', step: 0, patch: LESSONS[0].patch(s) })
+  const startLesson = () => dispatch({ type: 'lesson', step: 0, patch: lessonStateAt(s, 0) })
 
   return (
     <div className="app">

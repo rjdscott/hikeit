@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Boat, Posture, Slot } from '../physics/types'
 import { POSTURE_LABEL } from '../physics/types'
 import type { Crew } from '../state'
@@ -43,6 +43,15 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const vertical = width < 560
   const gRef = useRef<SVGGElement>(null)
+  const svgRef = useRef<SVGSVGElement>(null)
+  // Chromium ignores touch-action on SVG children: stop the browser claiming crew drags as page scroll (svg itself stays pan-y)
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const h = (e: TouchEvent) => { if ((e.target as Element).closest?.('.crew')) e.preventDefault() }
+    el.addEventListener('touchstart', h, { passive: false })
+    return () => el.removeEventListener('touchstart', h)
+  }, [])
   const [drag, setDrag] = useState<{ id: number; x: number; y: number; moved: boolean; sx: number; sy: number } | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const { loa } = boat.json.hull
@@ -110,7 +119,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
 
   return (
     <div ref={wrapRef}>
-      <svg className="deck-svg" viewBox={vb} style={{ maxHeight: vertical ? '70vh' : undefined }} aria-label="Deck plan with draggable crew">
+      <svg ref={svgRef} className="deck-svg" viewBox={vb} style={{ maxHeight: vertical ? '70vh' : undefined }} aria-label="Deck plan with draggable crew">
         <g ref={gRef} transform={gT}>
           {/* wind arrow: from the windward side toward the boat */}
           <g transform={`translate(${mastX - 3.4}, 0)`}>
@@ -171,8 +180,9 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
               <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} transform={`translate(${x},${-y})`}
                 onPointerDown={onDown(c)} onPointerMove={onMovePtr} onPointerUp={onUp(c)} onPointerCancel={() => setDrag(null)}
                 onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} role="button" tabIndex={0}
-                aria-label={`${c.name}, ${p.slot.label}${rail && p.slot.side === 'w' ? ', ' + POSTURE_LABEL[c.posture] : ''}. Enter: cycle posture, arrows: move along the rail, W/L/B: windward rail, leeward rail, below`}
+                aria-label={`${c.name}, ${p.slot.label}${rail && p.slot.side === 'w' ? ', ' + POSTURE_LABEL[c.posture] + '. Enter: cycle posture' : ''}${rail ? '. Arrow keys: move along the rail' : ''}. W, L or B: move to windward rail, leeward rail or below`}
                 onKeyDown={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.altKey) return
                   const rails = boat.slots.filter((x) => x.kind === 'rail' && x.side === p.slot.side)
                   const idx = rails.findIndex((x) => x.id === c.slot)
                   if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (rail && p.slot.side === 'w') onPosture(c.id, NEXT[c.posture]) }

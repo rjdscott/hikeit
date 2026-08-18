@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeHash, encodeHash, initialState, presets, reducer } from './state'
+import { decodeHash, encodeHash, initialState, loadLocal, presets, reducer } from './state'
 import { resolveBoat } from './physics/boat'
 import xp44 from './data/xp44.json'
 import type { BoatJson } from './physics/types'
@@ -52,5 +52,23 @@ describe('railPosture + helpers', () => {
     s = reducer(s, { type: 'railPosture', posture: 'hike', railSlots })
     for (const c of s.crew) expect(c.posture).toBe(railSlots.has(c.slot) ? 'hike' : 'sit')
     expect(s.prevCrew).not.toBeNull()
+  })
+})
+
+describe('round-2 review fixes', () => {
+  it('decodeHash keeps base autoTrim/zPenalty when the params are absent (lesson deep links)', () => {
+    const base = { ...initialState(), autoTrim: true, zPenalty: false }
+    const d = decodeHash('#step=6', base, boat.slotById)
+    expect(d.autoTrim).toBe(true); expect(d.zPenalty).toBe(false); expect(d.lessonStep).toBe(6)
+  })
+  it('loadLocal ignores tampered payloads', () => {
+    const g = globalThis as unknown as { localStorage?: Storage }
+    const store: Record<string, string> = { 'hikeit.v1': JSON.stringify({ crew: [{ name: 5, kg: 'abc' }, { name: 'Rob', kg: 92.4 }, { name: '', kg: 9999 }] }) }
+    g.localStorage = { getItem: (k: string) => store[k] ?? null, setItem: () => {}, removeItem: () => {}, clear: () => {}, key: () => null, length: 0 } as unknown as Storage
+    const s = loadLocal(initialState())
+    expect(s.crew[0].name).toBe('Crew 1'); expect(s.crew[0].kg).toBe(85)
+    expect(s.crew[1].name).toBe('Rob'); expect(s.crew[1].kg).toBe(92)
+    expect(s.crew[2].name).toBe('Crew 3'); expect(s.crew[2].kg).toBe(150)
+    delete g.localStorage
   })
 })

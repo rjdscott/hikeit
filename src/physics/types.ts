@@ -7,6 +7,7 @@ export interface SailDef {
   awa: number[] // deg, ascending
   cl: number[]
   cd: number[] // parasitic drag coefficient
+  kpp?: number // ORC quadratic parasite drag constant (default 0.016)
 }
 
 export interface SailMode {

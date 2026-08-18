@@ -63,9 +63,10 @@ export function derive(s: State): Derived {
   const phi = eq.phi
   const perCrew = crewPts.map((p) => ({ ...p, moment: crewMoment(p, phi, boat.zCrew0, s.zPenalty) }))
   const rmHullEq = rmHull(boat, phi), rmCrewEq = rmCrew(crewPts, phi, boat.zCrew0, s.zPenalty)
-  const railCount = s.crew.filter((c) => boat.slotById[c.slot]?.kind === 'rail').length
+  const isWRail = (slot: string) => { const x = boat.slotById[slot]; return !!x && x.kind === 'rail' && x.side === 'w' }
+  const railCount = s.crew.filter((c) => isWRail(c.slot)).length
   const postures = Object.fromEntries((['sit', 'legs', 'hike'] as Posture[]).map((po) => {
-    const pts = crewPositions(s.crew.map((c) => (boat.slotById[c.slot]?.kind === 'rail' ? { ...c, posture: po } : c)), boat.slotById)
+    const pts = crewPositions(s.crew.map((c) => (isWRail(c.slot) ? { ...c, posture: po } : c)), boat.slotById)
     const pm = { boat, crew: pts, wind, flat: trim.flat, zPenalty: s.zPenalty }
     const e = equilibrium(pm)
     const sw = windSweep({ boat, crew: pts, flat: trim.flat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)

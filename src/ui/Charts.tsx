@@ -105,10 +105,9 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
   const yMax = 50
   const xs = d.sweep.map((p) => p.tws)
   const sx = scale(4, 30, M.l, w - M.r), sy = scale(-5, yMax, H - M.b, M.t)
-  const deg = (p: { phi: number; overpowered: boolean }) => (p.overpowered ? NaN : Math.min(yMax, p.phi / DEG))
+  const deg = (p: { phi: number; overpowered: boolean }) => (p.overpowered || p.phi / DEG > yMax ? NaN : p.phi / DEG)
   const cur = d.sweep.map(deg), base = d.sweepBase.map(deg)
   const overFrom = d.sweep.find((p) => p.overpowered)?.tws ?? null
-  const overFromBase = d.sweepBase.find((p) => p.overpowered)?.tws ?? null
   const ta = xs.map((_, i) => i).find((i) => cur[i] >= targetHeel), tb = xs.map((_, i) => i).find((i) => base[i] >= targetHeel)
   const lerpX = (arr: number[], i: number | undefined) => (i === undefined || i === 0 ? null : xs[i - 1] + ((targetHeel - arr[i - 1]) / (arr[i] - arr[i - 1] || 1)) * (xs[i] - xs[i - 1]))
   const xa = lerpX(cur, ta), xb = lerpX(base, tb)
@@ -131,10 +130,9 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
           {overFrom !== null && (
             <g>
               <rect x={sx(overFrom)} y={M.t} width={Math.max(0, w - M.r - sx(overFrom))} height={H - M.b - M.t} fill="url(#hatch)" opacity={0.6} />
-              <text x={sx(overFrom) + 6} y={M.t + 14} fontSize={11} fill="var(--c-sail)" fontWeight={600}>overpowered →</text>
+              <text x={sx(overFrom) > w - M.r - 90 ? w - M.r - 4 : sx(overFrom) + 6} y={M.t + 14} textAnchor={sx(overFrom) > w - M.r - 90 ? 'end' : 'start'} fontSize={11} fill="var(--c-sail)" fontWeight={600}>overpowered {sx(overFrom) > w - M.r - 90 ? '' : '→'}</text>
             </g>
           )}
-          {overFromBase !== null && overFrom !== null && overFromBase < overFrom && <line x1={sx(overFromBase)} x2={sx(overFromBase)} y1={M.t} y2={H - M.b} stroke="var(--c-ghost)" strokeDasharray="3 3" />}
           <path d={linePath(xs, base, sx, sy)} fill="none" stroke="var(--c-ghost)" strokeWidth={2} strokeDasharray="5 4" />
           <path d={linePath(xs, cur, sx, sy)} fill="none" stroke="var(--c-crew)" strokeWidth={2.4} />
           {xa !== null && xb !== null && (
@@ -167,7 +165,7 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
       <div className="legend">
         <span><i className="sw" style={{ background: 'var(--c-crew)' }} />this formation</span>
         <span><i className="sw dash" style={{ color: 'var(--c-ghost)' }} />all crew inboard (centreline)</span>
-        <span className="muted">at current sail power (flat = {fmt(d.flat, 2)}); hatched = no static equilibrium (overpowered)</span>
+        <span className="muted">at current sail power (flat = {fmt(d.flat, 2)}); lines stop above {yMax}°; hatched = no static equilibrium (overpowered)</span>
       </div>
     </div>
   )

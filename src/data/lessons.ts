@@ -38,7 +38,7 @@ export const LESSONS: LessonStep[] = [
   {
     title: 'Hike out — the lever arm is everything',
     body: [
-      'Legs over the lifelines moves each person\'s centre of gravity ~0.2 m outboard of sitting; a full legal hike (sitting facing out, waist inside the lower lifeline, upper body outside the upper one — RRS 49.2) is ~0.4 m outboard of sitting. That is about +20% on the lever arm for the same people.',
+      'Legs over the lifelines moves each person\'s centre of gravity ~0.2 m outboard of sitting; a full legal hike (sitting facing out, waist inside the lower lifeline, upper body outside the upper one — RRS 49.2) is ~0.4 m outboard of sitting. That is roughly a fifth more lever arm for the same people — the exact numbers are in the "Sitting vs hiking" panel.',
       'The "Sitting vs hiking" panel below shows what that buys in moment, heel and wind. Tap a selected windward-rail crew member on the deck plan to cycle sitting → legs over → full hike, or use the crew table.',
     ],
     patch: (s) => ({ crew: form(s, 'Racing: rail hiking') }),
@@ -76,3 +76,7 @@ export const LESSONS: LessonStep[] = [
     patch: () => ({ twa: 75, tws: 14, autoTrim: false, flat: 1 }),
   },
 ]
+
+/** Cumulative patch: fold every step up to and including `step`, so jumping straight to a step lands on its scenario. */
+export const lessonStateAt = (s: State, step: number): Partial<State> =>
+  LESSONS.slice(0, step + 1).reduce<State>((acc, l) => ({ ...acc, ...l.patch(acc) }), s)

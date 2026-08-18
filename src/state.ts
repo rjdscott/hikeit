@@ -107,9 +107,9 @@ export function decodeHash(hash: string, base: State, validSlots: Record<string,
   const s: State = {
     ...base,
     tws: num('tws', base.tws, 0, 40), twa: num('twa', base.twa, 30, 180), flat: num('flat', base.flat, 0.42, 1),
-    autoTrim: p.get('at') === '1', targetHeel: num('th', base.targetHeel, 0, 45),
+    autoTrim: p.has('at') ? p.get('at') === '1' : base.autoTrim, targetHeel: num('th', base.targetHeel, 0, 45),
     sailMode: xp44.sailModes.some((m) => m.id === p.get('sm')) ? p.get('sm')! : base.sailMode,
-    zPenalty: p.get('z') !== '0',
+    zPenalty: p.has('z') ? p.get('z') !== '0' : base.zPenalty,
     lessonStep: p.has('step') ? num('step', 0, 0, 20) : null,
   }
   const crewStr = p.get('crew')
@@ -127,10 +127,22 @@ export function loadLocal(base: State): State {
   try {
     const raw = localStorage.getItem(LS_KEY)
     if (!raw) return base
-    const d = JSON.parse(raw) as { crew?: { name: string; kg: number }[] }
-    return { ...base, crew: base.crew.map((c, i) => ({ ...c, name: d.crew?.[i]?.name ?? c.name, kg: d.crew?.[i]?.kg ?? c.kg })) }
+    const d = JSON.parse(raw) as { crew?: { name?: unknown; kg?: unknown }[] }
+    return {
+      ...base,
+      crew: base.crew.map((c, i) => {
+        const n = d.crew?.[i]?.name, k = d.crew?.[i]?.kg
+        return {
+          ...c,
+          name: typeof n === 'string' && n.trim() ? n.slice(0, 40) : c.name,
+          kg: typeof k === 'number' && Number.isFinite(k) ? Math.min(150, Math.max(40, Math.round(k))) : c.kg,
+        }
+      }),
+    }
   } catch { return base }
 }
+
+export function clearLocal() { try { localStorage.removeItem(LS_KEY) } catch { /* ignore */ } }
 
 export function saveLocal(s: State) {
   try { localStorage.setItem(LS_KEY, JSON.stringify({ crew: s.crew.map((c) => ({ name: c.name, kg: c.kg })) })) } catch { /* ignore */ }

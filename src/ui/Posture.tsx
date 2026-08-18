@@ -2,6 +2,7 @@ import type { Derived } from '../model'
 import { POSTURE_LABEL, POSTURE_OFFSET, type Posture } from '../physics/types'
 import type { Action, State } from '../state'
 import { fmt, kNm } from './svg'
+import { PostureFigures } from './PostureFigures'
 
 const ORDER: Posture[] = ['sit', 'legs', 'hike']
 const DESC: Record<Posture, string> = {
@@ -12,7 +13,7 @@ const DESC: Record<Posture, string> = {
 
 /** Sitting vs legs-over vs full hike: what the posture of the rail crew is worth. */
 export default function PosturePanel({ s, d, dispatch }: { s: State; d: Derived; dispatch: React.Dispatch<Action> }) {
-  const railSlots = new Set(d.boat.slots.filter((x) => x.kind === 'rail').map((x) => x.id))
+  const railSlots = new Set(d.boat.slots.filter((x) => x.kind === 'rail' && x.side === 'w').map((x) => x.id))
   const railCrew = s.crew.filter((c) => railSlots.has(c.slot))
   const current = railCrew.length ? (ORDER.find((po) => railCrew.every((c) => c.posture === po)) ?? null) : null
   const base = d.postures.sit
@@ -28,8 +29,9 @@ export default function PosturePanel({ s, d, dispatch }: { s: State; d: Derived;
           ))}
         </div>
       </div>
+      <PostureFigures boat={d.boat} current={current} />
       {railCrew.length === 0 ? (
-        <p className="small muted">Nobody is on the rail — drag crew to the windward rail slots or pick a racing preset to compare postures.</p>
+        <p className="small muted">Nobody is on the windward rail — drag crew to the windward rail slots or pick a racing preset to compare postures.</p>
       ) : (
         <div style={{ overflowX: 'auto' }}>
           <table className="tbl">
@@ -61,7 +63,7 @@ export default function PosturePanel({ s, d, dispatch }: { s: State; d: Derived;
             </tbody>
           </table>
           <p className="small muted" style={{ marginTop: 6 }}>
-            Full hike moves each rail crew's centre of gravity ~0.4 m further outboard than sitting — on a {fmt(2 * d.boat.halfbeamAt(7.5), 1)} m beam that is +{fmt((100 * POSTURE_OFFSET.hike) / (d.boat.halfbeamAt(7.5) - 0.35), 0)}% lever arm, for the same people. Same wind{s.autoTrim ? ', trimmers holding ' + s.targetHeel + '° — the gain shows up as sail power and drive.' : ', same trim.'}
+            Full hike moves each rail crew's centre of gravity {fmt(POSTURE_OFFSET.hike, 1)} m further outboard than sitting — from {fmt(d.boat.slotById['rail-w-4'].y, 2)} m to {fmt(d.boat.slotById['rail-w-4'].y + POSTURE_OFFSET.hike, 2)} m off the centreline, +{fmt((100 * POSTURE_OFFSET.hike) / d.boat.slotById['rail-w-4'].y, 0)}% lever arm for the same people. Same wind{s.autoTrim ? ', trimmers holding ' + s.targetHeel + '° — the gain shows up as sail power and drive.' : ', same trim.'}
           </p>
         </div>
       )}

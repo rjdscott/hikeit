@@ -2,44 +2,10 @@ import { useMemo } from 'react'
 import type { Derived } from '../model'
 import { DEG, G } from '../physics/types'
 import { fmt } from './svg'
+import { Figure } from './Figure'
 
 interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null }
 
-/** Stick figure of a rail crew member at the windward deck edge, boat frame (y outboard+, z up). */
-function Figure({ posture, y0, z0 }: { posture: 'sit' | 'legs' | 'hike'; y0: number; z0: number }) {
-  const st = { stroke: 'var(--c-crew)', strokeWidth: 0.11, strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const, fill: 'none' }
-  if (posture === 'sit') {
-    // bum inboard of the rail, feet on deck, torso upright
-    const b = { y: y0 - 0.35, z: z0 }
-    return (
-      <g>
-        <path d={`M${b.y},${b.z} L${b.y - 0.55},${b.z + 0.25} L${b.y - 0.75},${b.z}`} {...st} />
-        <path d={`M${b.y},${b.z} L${b.y - 0.05},${b.z + 0.7}`} {...st} />
-        <circle cx={b.y - 0.06} cy={b.z + 0.88} r={0.15} fill="var(--c-crew)" />
-      </g>
-    )
-  }
-  const b = { y: y0 - 0.02, z: z0 } // bum on the deck edge
-  const legs = `M${b.y},${b.z} L${b.y + 0.42},${b.z + 0.22} L${b.y + 0.5},${b.z - 0.32}`
-  if (posture === 'legs') {
-    return (
-      <g>
-        <path d={legs} {...st} />
-        <path d={`M${b.y},${b.z} L${b.y + 0.02},${b.z + 0.7}`} {...st} />
-        <circle cx={b.y + 0.02} cy={b.z + 0.88} r={0.15} fill="var(--c-crew)" />
-      </g>
-    )
-  }
-  return (
-    <g>
-      <path d={legs} {...st} />
-      <path d={`M${b.y},${b.z} L${b.y + 0.62},${b.z + 0.42}`} {...st} />
-      <circle cx={b.y + 0.76} cy={b.z + 0.55} r={0.15} fill="var(--c-crew)" />
-    </g>
-  )
-}
-
-/** Stern view: hull section heeled to equilibrium, with the two force couples that fight each other. */
 export default function HeelSection({ d, hover, railPosture }: Props) {
   const { boat, phiDeg, crewPts, cg, eq } = d
   const phi = eq.phi
@@ -64,7 +30,10 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
   const ce = S(0, zce), clr = S(0, zclr)
   const top = S(0, deckZ), mastTop = S(0, 10.6)
   const fixed = 1.5, fixedS = 1.15 // arrow lengths, m (fixed: magnitudes shown as numbers)
-  const vb = { x0: -5.6, y0: -10.9, w: 11.2, h: 14.3 }
+  // widen the canvas when the CE swings far to leeward at large heel
+  const xMax = Math.max(5.6, ce.x + fixedS + 1.7)
+  const vb = { x0: -5.6, y0: -10.9, w: 5.6 + xMax, h: 14.3 }
+  const dimX = xMax - 0.3 // heeling-arm dimension line
   const heavy = eq.overpowered
 
   return (
@@ -123,16 +92,16 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           {/* sail force at CE (leeward), hydro force at CLR (windward) */}
           <circle cx={ce.x} cy={ce.y} r={0.1} fill="var(--c-sail)" />
           <line x1={ce.x} y1={ce.y} x2={ce.x + fixedS} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
-          <text x={ce.x + 0.25} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)">F_H {fmt(d.heelForceEq / 1e3, 1)} kN</text>
+          <text x={ce.x + 0.25} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 0.08 }}>F_H {fmt(d.heelForceEq / 1e3, 1)} kN</text>
           <text x={ce.x - 0.2} y={ce.y + 0.12} className="ml" fontSize={0.3} textAnchor="end" fill="var(--c-sail)">CE</text>
           <circle cx={clr.x} cy={clr.y} r={0.1} fill="var(--c-sail)" />
           <line x1={clr.x} y1={clr.y} x2={clr.x - fixedS} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
           <text x={clr.x - fixedS - 0.15} y={clr.y + 0.12} className="ml" fontSize={0.3} textAnchor="end" fill="var(--c-sail)">keel</text>
           {/* heeling arm dimension */}
-          <line x1={ce.x} y1={ce.y} x2={5.35} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
-          <line x1={clr.x} y1={clr.y} x2={5.35} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
-          <line x1={5.25} y1={ce.y} x2={5.25} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
-          <text x={5.1} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="end" fill="var(--c-sail)" transform={`rotate(-90 5.1 ${(ce.y + clr.y) / 2})`}>h {fmt(d.arm, 1)} m → HM {fmt(d.hmEq / 1e3, 1)} kN·m</text>
+          <line x1={ce.x} y1={ce.y} x2={dimX + 0.1} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
+          <line x1={clr.x} y1={clr.y} x2={dimX + 0.1} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
+          <line x1={dimX} y1={ce.y} x2={dimX} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
+          <text x={dimX - 0.15} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-sail)" transform={`rotate(-90 ${dimX - 0.15} ${(ce.y + clr.y) / 2})`}>h·cosφ = {fmt(d.arm * cos, 1)} m (h {fmt(d.arm, 1)} m) → HM {fmt(d.hmEq / 1e3, 1)} kN·m</text>
           {/* heel angle arc */}
           <path d={`M0,-2.2 A2.2,2.2 0 0 1 ${2.2 * Math.sin(phi)},${-2.2 * Math.cos(phi)}`} fill="none" stroke="var(--ink)" strokeWidth={0.03} />
           <line x1={0} y1={0} x2={0} y2={-2.4} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
@@ -145,7 +114,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
       <div className="legend">
         <span><i className="sw" style={{ background: 'var(--c-hull)' }} />weight at G · GZ</span>
         <span><i className="sw" style={{ background: 'var(--c-buoy)' }} />buoyancy at B</span>
-        <span><i className="sw" style={{ background: 'var(--c-sail)' }} />sail / keel forces · arm h</span>
+        <span><i className="sw" style={{ background: 'var(--c-sail)' }} />sail / keel forces (horizontal) · vertical gap h·cosφ; HM = F_H·h·cos²φ</span>
         <span><i className="sw" style={{ background: 'var(--c-crew)' }} />crew (G shift {fmt(cg.yG * 100, 0)} cm to windward)</span>
         <span className="muted">arrows fixed length; magnitudes labelled</span>
       </div>

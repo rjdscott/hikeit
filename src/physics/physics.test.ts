@@ -167,3 +167,17 @@ describe('equilibrium', () => {
     expect(ta - tb).toBeGreaterThan(1)
   })
 })
+
+describe('round-2 review fixes', () => {
+  it('twist only lowers the sail plan above the sheer: heelingArm at flat=0.42 ≈ 8.1 m (freeboard not twisted)', () => {
+    const fb = json.hull.freeboard
+    const expected = zceEff(boat.zce - fb, 0.42, boat.frac) + fb + 0.43 * boat.draft
+    expect(heelingArm(boat, 0.42)).toBeCloseTo(expected, 9)
+    expect(heelingArm(boat, 0.42)).toBeGreaterThan(8.0); expect(heelingArm(boat, 0.42)).toBeLessThan(8.3)
+    expect(heelingArm(boat, 1)).toBeCloseTo(boat.zce + 0.43 * boat.draft, 9)
+  })
+  it('ORC KPP parasite term is area-weighted (~0.0147 upwind), C_R still > 0.4', () => {
+    const c = sailCoeffs(boat.sails, boat.area, boat.hEff, 26, 1)
+    expect(c.cd).toBeGreaterThan(0.13); expect(c.cr).toBeGreaterThan(0.4)
+  })
+})
