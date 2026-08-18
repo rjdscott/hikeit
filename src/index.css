@@ -189,3 +189,12 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .cmp-row .d.good { color: #1a7f4b; font-weight: 600; }
 .cmp-row .d.bad { color: var(--c-sail); font-weight: 600; }
 .area-compare { grid-area: compare; }
+
+/* ---- quiz ---- */
+.quiz { background: #fff7ee; border: 1px solid #f3d9b8; border-radius: 10px; padding: 10px 12px; }
+.quiz h3 { color: var(--c-crew); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.quiz-slider { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: center; margin-top: 6px; }
+.quiz-slider input { width: 100%; accent-color: var(--c-crew); }
+.quiz-slider .num { font-size: 1.1rem; font-weight: 600; min-width: 5em; text-align: right; }
+.quiz-result { background: var(--bg); border-left: 3px solid var(--c-ghost); padding: 6px 10px; border-radius: 6px; margin: 4px 0 6px; font-size: 0.9rem; }
+.quiz-result.good { border-left-color: #1a7f4b; }

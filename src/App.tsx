@@ -82,7 +82,7 @@ function App() {
       </header>
 
       <div className="grid">
-        {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} dispatch={dispatch} /></section>}
+        {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} d={d} dispatch={dispatch} /></section>}
         <section className="panel area-deck">
           <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the red arrow (windward side) · drag crew to slots</span></div>
           <DeckPlan boat={d.boat} crew={s.crew} ghostCrew={s.pinned?.crew ?? null} hover={hover} onHover={setHover} selected={selected} onSelect={setSelected}

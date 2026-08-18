@@ -1,0 +1,17 @@
+import { chromium } from 'playwright'
+const [,, out, url, width] = process.argv
+const b = await chromium.launch({ executablePath: process.env.CHROME || undefined })
+const p = await b.newPage({ viewport: { width: Number(width || 1380), height: 900 } })
+const errs = []; p.on('pageerror', (e) => errs.push(e.message))
+await p.goto(url, { waitUntil: 'networkidle' })
+await p.getByRole('button', { name: 'Start the lesson' }).click()
+await p.getByRole('button', { name: 'Next →' }).click()
+await p.getByRole('button', { name: 'Next: predict →' }).click()
+await p.waitForTimeout(300)
+await p.screenshot({ path: out.replace('.png', '_q.png'), fullPage: false })
+await p.getByRole('button', { name: 'Reveal →' }).click()
+await p.waitForTimeout(500)
+await p.screenshot({ path: out, fullPage: false })
+const txt = await p.locator('.quiz-result').innerText()
+console.log(txt.slice(0, 200), errs)
+await b.close()

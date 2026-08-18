@@ -1,11 +1,25 @@
 import type { State } from '../state'
 import { presets } from '../state'
+import type { Derived } from '../model'
+
+export interface Quiz {
+  question: string
+  unit: string
+  min: number
+  max: number
+  step: number
+  /** Correct answer from the state before and after this step's patch. */
+  answer: (before: Derived, after: Derived) => number
+  explain: (before: Derived, after: Derived) => string
+}
 
 export interface LessonStep {
   title: string
   body: string[]
   /** State changes applied when the step is entered. */
   patch: (s: State) => Partial<State>
+  /** Optional predict-then-reveal question asked before the patch is applied. */
+  quiz?: Quiz
 }
 
 const form = (s: State, name: keyof typeof presets) => s.crew.map((c, i) => ({ ...c, ...presets[name](i) }))
@@ -34,6 +48,12 @@ export const LESSONS: LessonStep[] = [
       'Watch the amber band open up between the hull curve and the total, the equilibrium heel drop about 4°, and G slide to windward in the stern view.',
     ],
     patch: (s) => ({ crew: form(s, 'Racing: rail sitting') }),
+    quiz: {
+      question: 'Everyone comes up from below and sits on the windward rail (helm and trimmer to their spots). How many degrees less heel?',
+      unit: '°', min: 0, max: 12, step: 0.5,
+      answer: (b, a) => b.phiDeg - a.phiDeg,
+      explain: (b, a) => `${b.phiDeg.toFixed(1)}° → ${a.phiDeg.toFixed(1)}°: 850 kg at ~1.8 m adds ${(a.rmCrewEq / 1e3).toFixed(1)} kN·m of righting moment — about ${Math.round((100 * a.rmCrewEq) / a.rmHullEq)}% of what the hull and keel give.`,
+    },
   },
   {
     title: 'Hike out — the lever arm is everything',
@@ -42,6 +62,12 @@ export const LESSONS: LessonStep[] = [
       'The "Sitting vs hiking" panel below shows what that buys in moment, heel and wind. Tap a selected windward-rail crew member on the deck plan to cycle sitting → legs over → full hike, or use the crew table.',
     ],
     patch: (s) => ({ crew: form(s, 'Racing: rail hiking') }),
+    quiz: {
+      question: 'Same people, same wind: they go from sitting to a full legal hike (+0.4 m each). How much more crew righting moment, in kN·m?',
+      unit: 'kN·m', min: 0, max: 8, step: 0.25,
+      answer: (b, a) => (a.rmCrewEq - b.rmCrewEq) / 1e3,
+      explain: (b, a) => `${(b.rmCrewEq / 1e3).toFixed(1)} → ${(a.rmCrewEq / 1e3).toFixed(1)} kN·m (+${Math.round((100 * (a.rmCrewEq - b.rmCrewEq)) / b.rmCrewEq)}%). Heel ${b.phiDeg.toFixed(1)}° → ${a.phiDeg.toFixed(1)}°. Nobody got heavier — the arm did.`,
+    },
   },
   {
     title: 'Height costs a little as you heel',
@@ -58,6 +84,12 @@ export const LESSONS: LessonStep[] = [
       'The gap at your target heel is the "free wind": with everyone hiking hard the boat carries about 2 kn more breeze before it is heeled the same amount as with the crew inboard — and each person who goes below gives back roughly 0.4°.',
     ],
     patch: () => ({ tws: 14, targetHeel: 20 }),
+    quiz: {
+      question: 'At 20° of heel, how many more knots of true wind can this hiking crew carry compared with everyone sitting inboard on the centreline?',
+      unit: 'kn', min: 0, max: 6, step: 0.25,
+      answer: (_b, a) => a.freeWind ?? 0,
+      explain: (_b, a) => `Free wind ≈ ${(a.freeWind ?? 0).toFixed(1)} kn: the amber curve reaches 20° at ${(a.freeWind ?? 0).toFixed(1)} kn more breeze than the grey one. Every body that goes below hands back roughly 0.4°.`,
+    },
   },
   {
     title: 'Or: hike, and the trimmers give you power',
