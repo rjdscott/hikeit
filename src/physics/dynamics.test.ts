@@ -33,3 +33,13 @@ describe('roll dynamics', () => {
     expect(Math.max(...tr.phi) - Math.min(...tr.phi)).toBeLessThan(0.05 * DEG)
   })
 })
+
+describe('crew reaction', () => {
+  it('hiking 3 s after the puff peaks higher than being hiked already, and both settle', () => {
+    const sit = crewPositions(defaultCrew().map((c, i) => ({ ...c, ...presets['Racing: rail sitting'](i) })), boat.slotById)
+    const early = simulatePuff(boat, crew, true, 0.85, 12, 40, 7.3, 5)
+    const late = simulatePuff(boat, sit, true, 0.85, 12, 40, 7.3, 5, undefined, 14, 1 / 60, { crewAfter: crew, reactAt: 3 })
+    expect(late.peak).toBeGreaterThan(early.peak + 0.5 * DEG)
+    expect(Math.abs(late.phi[late.phi.length - 1] - early.phi[early.phi.length - 1])).toBeLessThan(1.5 * DEG)
+  })
+})

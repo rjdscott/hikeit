@@ -27,6 +27,8 @@ export function simulatePuff(
   boat: Boat, crew: CrewPoint[], zPenalty: boolean, flat: number,
   tws: number, twa: number, bsp: number, dTws: number,
   params: RollParams = defaultRoll(boat), duration = 14, dt = 1 / 60,
+  /** optional crew reaction: switch to `crewAfter` once t ≥ 1 + reactAt (seconds after the puff starts) */
+  react?: { crewAfter: CrewPoint[]; reactAt: number },
 ): Trajectory {
   const wind0 = apparentWind(tws, twa, bsp)
   const eq0 = equilibrium({ boat, crew, wind: wind0, flat, zPenalty })
@@ -40,7 +42,8 @@ export function simulatePuff(
     const t = i * dt
     const v = tws + puffProfile(t - 1, dTws) // puff starts at t = 1 s
     const w = apparentWind(v, twa, bsp)
-    const M = heelingMoment(boat, w, flat, phi) - rmHull(boat, phi) - rmCrew(crew, phi, boat.zCrew0, zPenalty) - c * omega
+    const crewNow = react && t >= 1 + react.reactAt ? react.crewAfter : crew
+    const M = heelingMoment(boat, w, flat, phi) - rmHull(boat, phi) - rmCrew(crewNow, phi, boat.zCrew0, zPenalty) - c * omega
     omega += (M / params.inertia) * dt
     phi += omega * dt
     if (phi > peak) { peak = phi; peakT = t }

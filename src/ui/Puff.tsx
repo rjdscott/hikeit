@@ -4,7 +4,7 @@ import { DEG } from '../physics/types'
 import { defaultRoll, rollPeriod, simulatePuff, type Trajectory } from '../physics/dynamics'
 import { fmt, linePath, scale, useWidth } from './svg'
 
-export interface PuffState { traj: Trajectory; t: number; dTws: number }
+export interface PuffState { traj: Trajectory; late: Trajectory | null; reactAt: number; t: number; dTws: number }
 
 // Tiny external store so the 60 fps playback clock only re-renders the subscribers (stern view + puff panel), not the whole app.
 let puffState: PuffState | null = null
@@ -16,14 +16,24 @@ let raf = 0
 
 export const usePuffState = () => useSyncExternalStore(subscribe, getSnap, getSnap)
 
-export function startPuff(d: Derived, dTws: number) {
-  const traj = simulatePuff(d.boat, d.crewPts, d.zPenalty, d.flat, d.wind.tws, d.wind.twa, d.wind.bsp, dTws, defaultRoll(d.boat))
+/** The same people caught inboard (cockpit / pit) when the puff hits, reaching their current positions after `reactAt` s. */
+export function caughtInboard(d: Derived) {
+  const pit = d.boat.slotById['pit-w']
+  return d.crewPts.map((p) => (p.y > 1.0 ? { ...p, y: pit.y, z: pit.z } : p))
+}
+
+export function startPuff(d: Derived, dTws: number, reactAt: number | null) {
+  const roll = defaultRoll(d.boat)
+  const traj = simulatePuff(d.boat, d.crewPts, d.zPenalty, d.flat, d.wind.tws, d.wind.twa, d.wind.bsp, dTws, roll)
+  const late = reactAt !== null
+    ? simulatePuff(d.boat, caughtInboard(d), d.zPenalty, d.flat, d.wind.tws, d.wind.twa, d.wind.bsp, dTws, roll, 14, 1 / 60, { crewAfter: d.crewPts, reactAt })
+    : null
   const t0 = performance.now()
   cancelAnimationFrame(raf)
   const tick = () => {
     const t = (performance.now() - t0) / 1000
     const end = traj.t[traj.t.length - 1]
-    puffState = { traj, t: Math.min(t, end), dTws }; emit()
+    puffState = { traj, late, reactAt: reactAt ?? 0, t: Math.min(t, end), dTws }; emit()
     if (t < end) raf = requestAnimationFrame(tick)
   }
   raf = requestAnimationFrame(tick)
@@ -40,14 +50,17 @@ export const sampleAt = (tr: Trajectory, t: number) => {
 /** Puff controls + heel trace (rendered inside the stern-view panel). */
 export default function PuffPanel({ d }: { d: Derived }) {
   const puff = usePuffState()
-  const onStart = (x: number) => startPuff(d, x)
+  const [compare, setCompare] = useState(true)
+  const [reactAt, setReactAt] = useState(5)
+  const onStart = (x: number) => startPuff(d, x, compare ? reactAt : null)
   const onStop = stopPuff
   const [dTws, setDTws] = useState(5)
   const [ref, w] = useWidth<HTMLDivElement>()
   const H = 120, M = { l: 34, r: 10, t: 10, b: 20 }
   const tr = puff?.traj
   const T = rollPeriod(d.boat, defaultRoll(d.boat))
-  const yMax = tr ? Math.max(40, Math.ceil((tr.peak / DEG + 3) / 5) * 5) : 40
+  const late = puff?.late ?? null
+  const yMax = tr ? Math.max(40, Math.ceil((Math.max(tr.peak, late?.peak ?? 0) / DEG + 3) / 5) * 5) : 40
   const sx = scale(0, 14, M.l, w - M.r), sy = scale(0, yMax, H - M.b, M.t)
   const cur = tr && puff ? sampleAt(tr, puff.t) : null
   const done = !!(tr && puff && puff.t >= tr.t[tr.t.length - 1] - 0.05)
@@ -63,6 +76,10 @@ export default function PuffPanel({ d }: { d: Derived }) {
           {puff && <button className="btn sm" onClick={onStop}>Clear</button>}
         </div>
       </div>
+      <div className="toggle" style={{ marginTop: 0, flexWrap: 'wrap', rowGap: 4 }}>
+        <label style={{ display: 'inline-flex', gap: 6, alignItems: 'center' }}><input type="checkbox" checked={compare} onChange={(e) => setCompare(e.target.checked)} /> Compare with the same crew caught in the cockpit,</label>
+        <span style={{ display: 'inline-flex', gap: 6, alignItems: 'center', opacity: compare ? 1 : 0.5 }}>reaching the rail after <input type="range" min={1} max={8} step={1} value={reactAt} onChange={(e) => setReactAt(Number(e.target.value))} style={{ width: 80, accentColor: 'var(--c-sail)' }} aria-label="reaction time" disabled={!compare} /> <b className="num">{reactAt} s</b></span>
+      </div>
       {over && <p className="small muted">The boat is already overpowered at this wind and trim — no steady heel to puff from. Reef, change down or hike first.</p>}
       {!tr ? (
         !over && <p className="small muted">A gust hits harder than its steady-state heel: the boat rolls past the new equilibrium before the keel catches it. Press <b>Puff!</b> and watch the boat above — then pin A/B and send two people below: the crew that is already out has the margin.</p>
@@ -77,17 +94,22 @@ export default function PuffPanel({ d }: { d: Derived }) {
             <line x1={M.l} x2={w - M.r} y1={sy(tr.phiStaticBase / DEG)} y2={sy(tr.phiStaticBase / DEG)} stroke="var(--c-ghost)" strokeDasharray="4 3" />
             {!tr.puffOver && <line x1={M.l} x2={w - M.r} y1={sy(tr.phiStaticPuff / DEG)} y2={sy(tr.phiStaticPuff / DEG)} stroke="var(--c-sail)" strokeDasharray="2 3" />}
             <text x={w - M.r - 4} y={(tr.puffOver ? M.t + 12 : sy(tr.phiStaticPuff / DEG) - 4)} textAnchor="end" fontSize={10.5} fill="var(--c-sail)">{tr.puffOver ? `+${puff!.dTws} kn: overpowered — no steady heel` : `static at +${puff!.dTws} kn: ${fmt(tr.phiStaticPuff / DEG, 1)}°`}</text>
+            {late && <path d={linePath(late.t.filter((t) => t <= puff!.t), late.phi.filter((_, i) => late.t[i] <= puff!.t).map((p) => p / DEG), sx, sy)} fill="none" stroke="var(--c-sail)" strokeWidth={2} strokeDasharray="5 3" />}
+            {late && <line x1={sx(1 + puff!.reactAt)} x2={sx(1 + puff!.reactAt)} y1={M.t} y2={H - M.b} stroke="var(--c-sail)" strokeDasharray="2 3" opacity={0.6} />}
+            {late && <text x={sx(1 + puff!.reactAt) + 3} y={H - M.b - 4} fontSize={10} fill="var(--c-sail)">crew reach the rail</text>}
             <path d={linePath(tr.t.filter((t) => t <= puff!.t), tr.phi.filter((_, i) => tr.t[i] <= puff!.t).map((p) => p / DEG), sx, sy)} fill="none" stroke="var(--c-hull)" strokeWidth={2} />
             {cur && <circle cx={sx(puff!.t)} cy={sy(cur.phi / DEG)} r={4} fill="var(--c-hull)" stroke="#fff" strokeWidth={1.5} />}
             {done && !tr.puffOver && (
               <g>
-                <circle cx={sx(tr.peakT)} cy={sy(tr.peak / DEG)} r={3.5} fill="var(--c-sail)" />
-                <text x={sx(tr.peakT) + 6} y={sy(tr.peak / DEG) - 6} fontSize={11} fontWeight={600} fill="var(--c-sail)" className="num">peak {fmt(tr.peak / DEG, 1)}° (+{fmt((tr.peak - tr.phiStaticPuff) / DEG, 1)}° overshoot)</text>
+                <circle cx={sx(tr.peakT)} cy={sy(tr.peak / DEG)} r={3.5} fill="var(--c-hull)" />
+                <text x={sx(tr.peakT) + 6} y={sy(tr.peak / DEG) + (late ? 15 : -6)} fontSize={11} fontWeight={600} fill="var(--c-hull)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>peak {fmt(tr.peak / DEG, 1)}° (+{fmt((tr.peak - tr.phiStaticPuff) / DEG, 1)}° overshoot)</text>
+                {late && <text x={M.l + 6} y={M.t + 12} fontSize={11} fontWeight={600} fill="var(--c-sail)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>caught inboard: peak {fmt(late.peak / DEG, 1)}° (+{fmt((late.peak - tr.peak) / DEG, 1)}° vs in place)</text>}
               </g>
             )}
           </svg>
           <div className="legend">
-            <span><i className="sw" style={{ background: 'var(--c-hull)' }} />heel during the puff</span>
+            <span><i className="sw" style={{ background: 'var(--c-hull)' }} />this formation, already in place</span>
+            {late && <span><i className="sw dash" style={{ color: 'var(--c-sail)' }} />same crew caught in the cockpit, on the rail after {puff!.reactAt} s</span>}
             <span><i className="sw dash" style={{ color: 'var(--c-ghost)' }} />steady heel before ({fmt(tr.phiStaticBase / DEG, 1)}°)</span>
             <span><i className="sw dash" style={{ color: 'var(--c-sail)' }} />steady heel in the puff</span>
           </div>
