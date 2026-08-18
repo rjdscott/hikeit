@@ -85,3 +85,18 @@ describe('target-speed card', () => {
     expect(d.targetAngle).toBe(false)
   })
 })
+
+describe('pin A/B', () => {
+  it('pin snapshots, restore brings it back, unpin clears', () => {
+    let s = reducer(initialState(), { type: 'preset', name: 'Racing: rail hiking' })
+    s = reducer(s, { type: 'pin' })
+    expect(s.pinned?.crew[0].posture).toBe('hike')
+    s = reducer(s, { type: 'preset', name: 'All below' })
+    s = reducer(s, { type: 'patch', patch: { tws: 20 } })
+    expect(s.crew[0].slot).toBe('below')
+    s = reducer(s, { type: 'restorePinned' })
+    expect(s.crew[0].slot).toBe('rail-w-0'); expect(s.tws).toBe(10); expect(s.pinned).not.toBeNull()
+    s = reducer(s, { type: 'unpin' })
+    expect(s.pinned).toBeNull()
+  })
+})

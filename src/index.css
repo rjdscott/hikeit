@@ -41,6 +41,7 @@ button { cursor: pointer; }
   "deck section"
   "stats section"
   "controls readouts"
+  "compare compare"
   "posture posture"
   "moment sweep"
   "eq eq"
@@ -61,7 +62,7 @@ button { cursor: pointer; }
   .app { padding: 10px; }
   .mob-hide { display: none; }
   table.tbl input:not([type=number]) { max-width: 6.5em; }
-  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "compare" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
 }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; }
@@ -165,7 +166,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .sheet-group .occ { display: inline-grid; place-items: center; min-width: 16px; height: 16px; border-radius: 8px; background: var(--c-crew); color: #fff; font-size: 0.62rem; font-weight: 700; margin-left: 5px; padding: 0 3px; }
 .sheet-group .btn.active .occ { background: #fff; color: var(--ink); }
 .crew-list { list-style: none; margin: 0; padding: 0; }
-.crew-list li { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px 10px; align-items: center; padding: 6px 4px; border-bottom: 1px solid var(--line); cursor: pointer; border-radius: 6px; }
+.crew-list li { display: grid; grid-template-columns: 30px 1fr auto; gap: 4px 10px; align-items: center; padding: 4px 4px; border-bottom: 1px solid var(--line); cursor: pointer; border-radius: 6px; }
 .crew-list li:hover, .crew-list li.hover { background: #fff7ee; }
 .crew-list li.on { background: #fff1e0; }
 .crew-list .who { min-width: 0; }
@@ -174,3 +175,17 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .crew-list .val { font-family: var(--mono); font-size: 0.9rem; text-align: right; }
 .crew-list .bar { grid-column: 2 / -1; height: 5px; }
 .deck-svg .crew:focus { outline: none; }
+
+/* ---- compare ---- */
+.cmp-empty { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2px 24px; }
+.cmp-row { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--line); font-size: 0.9rem; }
+.cmp-row .k { color: var(--muted); }
+.cmp-row .a { color: var(--c-ghost); }
+.cmp-row .arrow { color: var(--line-strong); }
+.cmp-row .b { font-weight: 600; }
+.cmp-row .b small { color: var(--muted); font-weight: 400; }
+.cmp-row .d { min-width: 4.5em; text-align: right; color: var(--muted); }
+.cmp-row .d.good { color: #1a7f4b; font-weight: 600; }
+.cmp-row .d.bad { color: var(--c-sail); font-weight: 600; }
+.area-compare { grid-area: compare; }

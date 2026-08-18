@@ -8,6 +8,7 @@ import { svgPoint, useWidth } from './svg'
 interface Props {
   boat: Boat
   crew: Crew[]
+  ghostCrew?: Crew[] | null
   hover: number | null
   selected: number | null
   onSelect: (id: number | null) => void
@@ -41,7 +42,7 @@ function layout(crew: Crew[], boat: Boat) {
   return pos
 }
 
-export default function DeckPlan({ boat, crew, hover, selected, onSelect, onHover, onMove, onPosture }: Props) {
+export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSelect, onHover, onMove, onPosture }: Props) {
   const [wrapRef, width] = useWidth<HTMLDivElement>()
   const vertical = width < 560
   const gRef = useRef<SVGGElement>(null)
@@ -58,6 +59,7 @@ export default function DeckPlan({ boat, crew, hover, selected, onSelect, onHove
   const setSelected = onSelect
   const { loa } = boat.json.hull
   const pos = useMemo(() => layout(crew, boat), [crew, boat])
+  const ghostPos = useMemo(() => (ghostCrew ? layout(ghostCrew, boat) : null), [ghostCrew, boat])
   const outline = boat.json.deck.outline
   const hullPath = useMemo(() => {
     const top = outline.map(([x, hb]) => `${x},${-hb}`).join(' L')
@@ -167,6 +169,14 @@ export default function DeckPlan({ boat, crew, hover, selected, onSelect, onHove
                 )}
               </g>
             )
+          })}
+          {/* formation A (pinned) as hollow ghosts */}
+          {ghostPos && ghostCrew && ghostCrew.map((c) => {
+            const p = ghostPos.get(c.id)
+            if (!p) return null
+            const live = pos.get(c.id)
+            if (live && Math.hypot(live.x - p.x, live.y - p.y) < 0.05) return null
+            return <circle key={`g${c.id}`} cx={p.x} cy={-p.y} r={R - 0.02} fill="none" stroke="var(--c-ghost)" strokeWidth={0.05} strokeDasharray="0.1 0.07" />
           })}
           {/* crew */}
           {crew.map((c) => {

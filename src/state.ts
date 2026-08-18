@@ -16,7 +16,11 @@ export interface State {
   zPenalty: boolean
   overrides: { gm?: number; avsDeg?: number; n?: number; chScale?: number }
   lessonStep: number | null
+  pinned: Snapshot | null // formation A for side-by-side comparison
 }
+
+export type Snapshot = Pick<State, 'crew' | 'tws' | 'twa' | 'flat' | 'autoTrim' | 'targetHeel' | 'sailMode' | 'zPenalty' | 'targetAngle' | 'overrides'>
+export const snapshot = (s: State): Snapshot => ({ crew: s.crew, tws: s.tws, twa: s.twa, flat: s.flat, autoTrim: s.autoTrim, targetHeel: s.targetHeel, sailMode: s.sailMode, zPenalty: s.zPenalty, targetAngle: s.targetAngle, overrides: s.overrides })
 
 export type Action =
   | { type: 'patch'; patch: Partial<State> }
@@ -26,6 +30,9 @@ export type Action =
   | { type: 'railPosture'; posture: Posture; railSlots: Set<string> }
   | { type: 'lesson'; step: number | null; patch?: Partial<State> }
   | { type: 'reset' }
+  | { type: 'pin' }
+  | { type: 'unpin' }
+  | { type: 'restorePinned' }
 
 export const CREW_N = 10
 
@@ -55,6 +62,7 @@ export const initialState = (): State => ({
   zPenalty: true,
   overrides: {},
   lessonStep: null,
+  pinned: null,
 })
 
 /** Slots that can hold more than one person. */
@@ -81,6 +89,12 @@ export function reducer(s: State, a: Action): State {
       return { ...s, prevCrew: s.crew, crew: s.crew.map((c, i) => ({ ...c, ...presets[a.name](i) })) }
     case 'lesson':
       return { ...s, ...(a.patch ?? {}), lessonStep: a.step, prevCrew: a.patch?.crew ? s.crew : s.prevCrew }
+    case 'pin':
+      return { ...s, pinned: snapshot(s), prevCrew: null }
+    case 'unpin':
+      return { ...s, pinned: null }
+    case 'restorePinned':
+      return s.pinned ? { ...s, ...s.pinned, prevCrew: s.crew } : s
     case 'reset':
       return { ...initialState(), crew: initialState().crew.map((c, i) => ({ ...c, name: s.crew[i]?.name ?? c.name, kg: s.crew[i]?.kg ?? c.kg })) }
   }

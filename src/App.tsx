@@ -9,6 +9,9 @@ import { MomentChart, WindSweepChart } from './ui/Charts'
 import Controls from './ui/Controls'
 import { CrewList, Stats } from './ui/Readouts'
 import CrewSheet from './ui/CrewSheet'
+import Compare from './ui/Compare'
+import { derive } from './model'
+import { useMemo } from 'react'
 import Advanced from './ui/Advanced'
 import Lesson from './ui/Lesson'
 import PosturePanel from './ui/Posture'
@@ -37,7 +40,10 @@ class Boundary extends Component<{ children: ReactNode }, { err: Error | null }>
 
 function App() {
   const [s, dispatch] = useReducer(reducer, undefined, init)
-  const d = useDerived(s)
+  const d0 = useDerived(s)
+  const dA = useMemo(() => (s.pinned ? derive({ ...s, ...s.pinned, pinned: null }) : null), [s.pinned])
+  // when A is pinned, the ghost curve/marker is A rather than the previous formation
+  const d = useMemo(() => (dA ? { ...d0, ghost: { curves: dA.curves, eq: dA.eq, flat: dA.flat } } : d0), [d0, dA])
   const [hover, setHover] = useState<number | null>(null)
   const [selected, setSelected] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
@@ -79,7 +85,7 @@ function App() {
         {s.lessonStep !== null && <section className="panel area-lesson"><Lesson s={s} dispatch={dispatch} /></section>}
         <section className="panel area-deck">
           <div className="panel-head"><h2>Deck plan</h2><span className="hint">wind from the red arrow (windward side) · drag crew to slots</span></div>
-          <DeckPlan boat={d.boat} crew={s.crew} hover={hover} onHover={setHover} selected={selected} onSelect={setSelected}
+          <DeckPlan boat={d.boat} crew={s.crew} ghostCrew={s.pinned?.crew ?? null} hover={hover} onHover={setHover} selected={selected} onSelect={setSelected}
             onMove={(id, slot) => dispatch({ type: 'moveCrew', id, slot })}
             onPosture={(id, posture) => dispatch({ type: 'setCrew', id, patch: { posture } })} />
         </section>
@@ -88,6 +94,7 @@ function App() {
           <HeelSection d={d} hover={hover} railPosture={railPosture} />
         </section>
         <section className="panel area-stats"><Stats d={d} s={s} /></section>
+        <section className="panel area-compare"><Compare s={s} d={d} dA={dA} dispatch={dispatch} /></section>
         <section className="panel area-posture"><PosturePanel s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-controls"><Controls s={s} d={d} dispatch={dispatch} /></section>
         <section className="panel area-readouts"><CrewList s={s} d={d} hover={hover} selected={selected} onHover={setHover} onSelect={setSelected} /></section>
