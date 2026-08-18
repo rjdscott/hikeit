@@ -40,7 +40,7 @@ export interface BoatJson {
     section: [number, number][]
     keel: { rootZ: number; tipZ: number; chordRoot: number; chordTip: number; bulbLength: number; bulbHeight: number }
   }
-  stability: { rm1: number; avsDeg: number; n: number; zG: number }
+  stability: { rm1: number; avsDeg: number; n: number; zG: number; zCrew0: number }
   rig: { P: number; E: number; IG: number; J: number; BAS: number; ISP: number; SPL: number; mastX: number }
   deck: {
     outline: [number, number][]
@@ -81,6 +81,7 @@ export interface Boat {
   avs: number // rad
   n: number
   zG: number
+  zCrew0: number // ORC default-crew reference height (crew already inside disp/RM1)
   draft: number
   halfbeamAt: (x: number) => number
   slots: Slot[]

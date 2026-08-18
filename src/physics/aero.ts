@@ -26,7 +26,9 @@ export function sailCoeffs(sails: SailDef[], area: number, hEff: number, awa: nu
     cd0 += (s.area / area) * lerpTable(s.awa, s.cd, awa)
   }
   cl *= flat
-  const ar = (hEff * hEff) / area
+  // ORC kheff: effective-span factor vs AWA (≈1.45 at 20° → 0.80 at 80°)
+  const kheff = Math.max(0.8, Math.min(1.45, 1.45 - ((awa - 20) / 60) * 0.65))
+  const ar = (hEff * kheff) ** 2 / area
   const cdi = cl * cl * (1 / (Math.PI * ar) + 0.005)
   const cd = cd0 + cdi
   const b = awa * DEG

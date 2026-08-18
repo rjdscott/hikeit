@@ -55,7 +55,7 @@ Within 1–2 % to 40°, ~4 % at the peak; degrades past 130° (irrelevant here).
 |---|---|---|
 | Δ_light | 8650 kg | builder |
 | Ballast | 3850 kg (44.5 %) | builder |
-| Δ_sailing (no crew) | 9650 kg | ORC sistership ~9654 kg |
+| Δ_sailing (ORC sailing trim, **includes** default crew ~930 kg on the centreline at z ≈ 0.98 m) | 9700 kg (implemented) | ORC sistership ~9654 kg — see correction note below |
 | B_max | 4.07 m | builder |
 | T | 2.30 m | builder (deep 2.65 m) |
 | GM | 1.9 m (agent) / **1.54 m (implemented, from RM₁ 260)** | see note |
@@ -151,7 +151,7 @@ At flat = 0.5, Z_CE × 0.75 → HM ≈ 37 % of full. Reefing: reduce A_ref and Z
 
 ### 4.5 Wind input
 
-V_aw² = V_tw² + V_b² − 2 V_tw V_b cos(TWA). Close-hauled TWA 40°, V_b 7 kn → V_aw/V_tw ≈ 1.45 over 8–20 kn. Do not couple V_b to heel; use a lookup (5.5 kn @ 8, 7.0 @ 12, 7.6 @ 18 kn TWS) — implemented as a seed polar table.
+V_aw² = V_tw² + V_b² + 2 V_tw V_b cos(TWA) (TWA measured from the bow, boat speed adds headwind; ORC VPP eq. 7.3 — an earlier draft of this note had the sign wrong). Close-hauled TWA 40°, V_b 7 kn → V_aw/V_tw ≈ 1.45 over 8–20 kn. Do not couple V_b to heel; use a lookup (5.5 kn @ 8, 7.0 @ 12, 7.6 @ 18 kn TWS) — implemented as a seed polar table.
 
 Sources: ORC VPP §§4.4.2, 5.1.3, 5.2.1–5.2.2, 5.4.4, 5.5; [Principles of Yacht Design](https://books.google.com/books/about/Principles_of_Yacht_Design.html?id=cafDAQAAQBAJ).
 
@@ -231,3 +231,21 @@ With cert-derived GM 1.55: hull RM(25°) ≈ 57 kN·m and crew contribution rise
 - [Yachting World — heel angles](https://www.yachtingworld.com/5-tips/5-expert-tips-to-help-you-better-understand-sailing-heel-angles-159205)
 - [Sailing Virgins — heel and helm](https://info.sailingvirgins.com/blog/balancing-heel-and-helm-on-keelboats-crew-positioning-sail-trim-keel-management-techniques)
 - [RRS 2025–2028](https://www.asiansailing.org/wp-content/uploads/2024/07/RRS-2025-2028-Final.pdf) · [rule 49 commentary](https://www.racingrulesofsailing.org/posts/1751-about-rule-49) · [WS Case 49.2](https://sailing.org/tools/documents/16618RacingRulesofSailingRule49.2-[24349].pdf)
+
+
+---
+
+## Correction after adversarial review (2026-08-18)
+
+Two independent reviewers verified against ORC VPP Documentation 2023 §4.2.2 / §4.4.1 that the certificate **sailing-trim displacement, VCG, RM at 1° and GZ curve already include the ORC default crew weight** (CW = 25.8·LSM0^1.4262 ≈ 932 kg for the Xp 44) placed on the centreline at `crewv = 0.05·LSM0 + 0.36 ≈ 0.98 m` above the waterplane (CAL 39 datasheet in the same PDF: measurement trim 7 525 kg / VCG 0.056 m → sailing trim 8 459 kg / VCG 0.146 m).
+
+Consequences, as implemented:
+
+- `Δ = 9700 kg` (from certificates) is used as-is and labelled "ORC sailing displacement (incl. default crew)"; crew mass is **not** added again.
+- Crew moments are pure weight shifts from that reference: `RM_crew = Σ mᵢ g (yᵢ cos φ − (zᵢ − z₀) sin φ)` with `z₀ = 0.98 m` (`stability.zCrew0` in `xp44.json`), not `z_G`.
+- The height penalty is therefore ~⅓ of the earlier estimate (z − z₀ ≈ 0.4 m instead of 1.5 m): at 20° it costs < 10 % of the gross gain, and the crew break-even angle is ≈ 75–80°, beyond GZ_max. Crew below decks (z ≈ 0.4 m) add a *small positive* moment because they sit lower than the reference.
+- Combined CG: `y_G = Σ mᵢ yᵢ / Δ`, `z_G' = z_G + Σ mᵢ (zᵢ − z₀) / Δ`.
+- Effective rig span now includes ORC's `kheff(AWA)` factor (≈1.45 at 20° → 0.80 at 80°) in the induced-drag term.
+- Rail seat arm: deck-edge half-beam minus 0.2 m (≈ 1.8 m sitting; +0.2 legs over; +0.4 full hike ≈ 2.2 m), matching §2.2 and ORC's deck-edge crew arm.
+
+Worked numbers after the correction (TWA 40°, flat = 1, 10 × 85 kg): 12 kn TWS — full hike 23.6°, sitting 24.6°, everyone below 27.8°; RM_crew (hike, at equilibrium) ≈ 14 kN·m ≈ 26 % of RM_hull. Auto-trim to 20° at 12 kn: flat 0.90 (hike) vs 0.76 (below), drive +18 %; "free wind" ≈ +2 kn.

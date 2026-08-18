@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useReducer, useState } from 'react'
+import { Component, lazy, Suspense, useEffect, useReducer, useRef, useState, type ReactNode } from 'react'
 import { decodeHash, encodeHash, initialState, loadLocal, reducer, saveLocal, type State } from './state'
 import { BOAT_JSON, useDerived } from './model'
 import { resolveBoat } from './physics/boat'
@@ -15,24 +15,43 @@ import PosturePanel from './ui/Posture'
 const Equations = lazy(() => import('./ui/Equations'))
 const SLOTS = resolveBoat(BOAT_JSON, 'upwind').slotById
 
-function init(): State {
-  const base = loadLocal(initialState())
-  const s = decodeHash(typeof location !== 'undefined' ? location.hash : '', base, SLOTS)
-  if (s.lessonStep !== null && LESSONS[s.lessonStep]) return { ...s, ...LESSONS[s.lessonStep].patch(s) }
-  return s
+function fromHash(hash: string, base: State): State {
+  const s0 = decodeHash(hash, base, SLOTS)
+  const step = s0.lessonStep
+  if (step === null) return s0
+  if (!Number.isInteger(step) || !LESSONS[step]) return { ...s0, lessonStep: null }
+  // lesson step supplies defaults; anything explicit in the URL wins
+  return decodeHash(hash, { ...base, ...LESSONS[step].patch(base) }, SLOTS)
+}
+const init = (): State => fromHash(typeof location !== 'undefined' ? location.hash : '', loadLocal(initialState()))
+
+class Boundary extends Component<{ children: ReactNode }, { err: Error | null }> {
+  state = { err: null as Error | null }
+  static getDerivedStateFromError(err: Error) { return { err } }
+  render() {
+    if (this.state.err) return <div className="app"><div className="panel"><h2>Something broke</h2><p className="small">{String(this.state.err.message)}</p><button className="btn" onClick={() => { location.hash = ''; location.reload() }}>Reset and reload</button></div></div>
+    return this.props.children
+  }
 }
 
-export default function App() {
+function App() {
   const [s, dispatch] = useReducer(reducer, undefined, init)
   const d = useDerived(s)
   const [hover, setHover] = useState<number | null>(null)
   const [copied, setCopied] = useState(false)
 
+  const sRef = useRef(s); sRef.current = s
   useEffect(() => { saveLocal(s) }, [s.crew])
+  // state → URL (debounced: Safari throttles replaceState) and URL → state on hashchange
   useEffect(() => {
-    const h = encodeHash(s)
-    if (location.hash !== h) history.replaceState(null, '', h)
+    const t = setTimeout(() => { const h = encodeHash(s); if (location.hash !== h) try { history.replaceState(null, '', h) } catch { /* throttled */ } }, 250)
+    return () => clearTimeout(t)
   }, [s])
+  useEffect(() => {
+    const on = () => { if (location.hash !== encodeHash(sRef.current)) dispatch({ type: 'patch', patch: fromHash(location.hash, sRef.current) }) }
+    addEventListener('hashchange', on)
+    return () => removeEventListener('hashchange', on)
+  }, [])
 
   const share = async () => {
     try { await navigator.clipboard.writeText(location.href); setCopied(true); setTimeout(() => setCopied(false), 1500) } catch { /* ignore */ }
@@ -88,4 +107,8 @@ export default function App() {
       </footer>
     </div>
   )
+}
+
+export default function Root() {
+  return <Boundary><App /></Boundary>
 }

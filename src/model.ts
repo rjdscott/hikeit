@@ -32,7 +32,7 @@ export interface Derived {
   perCrew: { id: number; name: string; m: number; y: number; z: number; moment: number }[]
   cg: ReturnType<typeof combinedCg>
   /** What-if: every rail crew in each posture (same wind/trim). */
-  postures: Record<Posture, { rmCrew: number; phiDeg: number; overpowered: boolean; freeWind: number | null }>
+  postures: Record<Posture, { rmCrew: number; phiDeg: number; overpowered: boolean; freeWind: number | null; flatReq: number | null; drive: number | null }>
   railCount: number
 }
 
@@ -61,8 +61,8 @@ export function derive(s: State): Derived {
   const sweepBase = windSweep({ boat, crew: inboard, flat: sweepFlat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)
   const ta = twsAtHeel(sweep, s.targetHeel * DEG), tb = twsAtHeel(sweepBase, s.targetHeel * DEG)
   const phi = eq.phi
-  const perCrew = crewPts.map((p) => ({ ...p, moment: crewMoment(p, phi, boat.zG, s.zPenalty) }))
-  const rmHullEq = rmHull(boat, phi), rmCrewEq = rmCrew(crewPts, phi, boat.zG, s.zPenalty)
+  const perCrew = crewPts.map((p) => ({ ...p, moment: crewMoment(p, phi, boat.zCrew0, s.zPenalty) }))
+  const rmHullEq = rmHull(boat, phi), rmCrewEq = rmCrew(crewPts, phi, boat.zCrew0, s.zPenalty)
   const railCount = s.crew.filter((c) => boat.slotById[c.slot]?.kind === 'rail').length
   const postures = Object.fromEntries((['sit', 'legs', 'hike'] as Posture[]).map((po) => {
     const pts = crewPositions(s.crew.map((c) => (boat.slotById[c.slot]?.kind === 'rail' ? { ...c, posture: po } : c)), boat.slotById)
@@ -70,7 +70,10 @@ export function derive(s: State): Derived {
     const e = equilibrium(pm)
     const sw = windSweep({ boat, crew: pts, flat: trim.flat, zPenalty: s.zPenalty }, windAt, SWEEP_TWS)
     const t = twsAtHeel(sw, s.targetHeel * DEG)
-    return [po, { rmCrew: rmCrew(pts, e.phi, boat.zG, s.zPenalty), phiDeg: e.phi / DEG, overpowered: e.overpowered, freeWind: t !== null && tb !== null ? t - tb : null }]
+    // in auto-trim mode the payoff is power, not heel: what flat (and drive) does this posture allow at the target heel?
+    const tr = s.autoTrim ? solveFlat({ boat, crew: pts, wind, zPenalty: s.zPenalty }, s.targetHeel * DEG) : null
+    const drive = tr ? driveForce(boat, wind, tr.flat, s.targetHeel * DEG) : null
+    return [po, { rmCrew: rmCrew(pts, e.phi, boat.zCrew0, s.zPenalty), phiDeg: e.phi / DEG, overpowered: e.overpowered, freeWind: t !== null && tb !== null ? t - tb : null, flatReq: tr?.flat ?? null, drive }]
   })) as Derived['postures']
   return {
     boat, crewPts, wind, flat: trim.flat, zPenalty: s.zPenalty, trimLimited: trim.trimLimited, underpowered: trim.underpowered,

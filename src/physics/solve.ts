@@ -13,7 +13,7 @@ export interface Model {
   zPenalty: boolean
 }
 
-export const rmTotal = (m: Model, phi: number) => rmHull(m.boat, phi) + rmCrew(m.crew, phi, m.boat.zG, m.zPenalty)
+export const rmTotal = (m: Model, phi: number) => rmHull(m.boat, phi) + rmCrew(m.crew, phi, m.boat.zCrew0, m.zPenalty)
 export const netMoment = (m: Model, phi: number) => rmTotal(m, phi) - heelingMoment(m.boat, m.wind, m.flat, phi)
 
 /** Curves at 1° from 0..maxDeg for charting. */
@@ -21,7 +21,7 @@ export function curves(m: Model, maxDeg = 90): Curves {
   const out: Curves = { phi: [], rmHull: [], rmCrew: [], rmTotal: [], hm: [] }
   for (let d = 0; d <= maxDeg; d++) {
     const p = d * DEG
-    const h = rmHull(m.boat, p), c = rmCrew(m.crew, p, m.boat.zG, m.zPenalty)
+    const h = rmHull(m.boat, p), c = rmCrew(m.crew, p, m.boat.zCrew0, m.zPenalty)
     out.phi.push(d); out.rmHull.push(h); out.rmCrew.push(c); out.rmTotal.push(h + c)
     out.hm.push(heelingMoment(m.boat, m.wind, m.flat, p))
   }

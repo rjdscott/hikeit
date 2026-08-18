@@ -39,7 +39,7 @@ button { cursor: pointer; }
 .grid { display: grid; gap: 16px; grid-template-columns: 3fr 2fr; align-items: start; grid-template-areas:
   "lesson lesson"
   "deck section"
-  "stats stats"
+  "stats section"
   "controls readouts"
   "posture posture"
   "moment sweep"
@@ -59,6 +59,8 @@ button { cursor: pointer; }
 .area-advanced { grid-area: advanced; }
 @media (max-width: 900px) {
   .app { padding: 10px; }
+  .mob-hide { display: none; }
+  table.tbl input:not([type=number]) { max-width: 6.5em; }
   .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
 }
 
@@ -110,8 +112,9 @@ table.tbl tr.hover td { background: #fff7ee; }
 .stat.buoy { border-left-color: var(--c-buoy); }
 .stat.warn { background: #fdeceb; border-left-color: var(--c-sail); }
 
-.deck-svg { width: 100%; height: auto; touch-action: none; user-select: none; -webkit-user-select: none; display: block; }
-.deck-svg .crew { cursor: grab; }
+.deck-svg { width: 100%; height: auto; touch-action: pan-y; user-select: none; -webkit-user-select: none; display: block; }
+.deck-svg .crew { cursor: grab; touch-action: none; }
+.deck-svg .crew:focus-visible circle { stroke: var(--ink); stroke-width: 0.09; }
 .deck-svg .crew.dragging { cursor: grabbing; }
 .deck-svg .slot { cursor: pointer; }
 .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
@@ -123,11 +126,13 @@ table.tbl tr.hover td { background: #fff7ee; }
 .lesson .body p { margin: 0.25em 0; }
 .lesson .nav { display: flex; gap: 6px; }
 .lesson .dots { display: flex; gap: 5px; margin-top: 8px; }
-.lesson .dots i { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong); display: inline-block; cursor: pointer; }
-.lesson .dots i.on { background: var(--ink); }
+.lesson .dots button { width: 10px; height: 10px; padding: 0; border: 0; border-radius: 50%; background: var(--line-strong); cursor: pointer; }
+.lesson .dots button.on { background: var(--ink); }
+.lesson .dots button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 @media (max-width: 700px) { .lesson { grid-template-columns: 1fr; } .lesson .nav { justify-content: flex-end; } }
 
 .katex-display { margin: 0.4em 0; overflow-x: auto; overflow-y: hidden; }
+@media (max-width: 700px) { .eq-grid .katex { font-size: 0.92em; } }
 .eq-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 8px 24px; }
 .eq-grid .katex { font-size: 1.02em; }
 .eq-grid .cap { font-size: 0.8rem; color: var(--muted); }

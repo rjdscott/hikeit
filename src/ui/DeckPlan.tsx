@@ -27,9 +27,13 @@ function layout(crew: Crew[], boat: Boat) {
     const s = boat.slotById[slotId]
     if (!s) continue
     list.forEach((c, k) => {
-      const dx = MULTI.has(slotId) ? (k - (list.length - 1) / 2) * 0.58 : 0
-      const off = s.kind === 'rail' ? { sit: 0, legs: 0.2, hike: 0.4 }[c.posture] : 0
-      pos.set(c.id, { x: s.x + dx, y: s.y + Math.sign(s.y) * off, slot: s })
+      // multi-occupant slots fan out in two rows so the group stays inside the coachroof
+      const n = list.length, cols = Math.ceil(n / 2), row = n > 5 ? (k < cols ? 0 : 1) : 0, col = row === 0 ? k : k - cols
+      const rowN = row === 0 ? cols : n - cols
+      const dx = MULTI.has(slotId) ? (col - (rowN - 1) / 2) * 0.6 : 0
+      const dy = MULTI.has(slotId) && n > 5 ? (row === 0 ? 0.36 : -0.36) : 0
+      const off = s.kind === 'rail' && s.side === 'w' ? { sit: 0, legs: 0.2, hike: 0.4 }[c.posture] : 0
+      pos.set(c.id, { x: s.x + dx, y: s.y + dy + off, slot: s })
     })
   }
   return pos
@@ -84,7 +88,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
     } else if (selected === c.id) {
       // second tap on a selected rail crew cycles posture; elsewhere deselects
       const slot = boat.slotById[c.slot]
-      if (slot?.kind === 'rail') onPosture(c.id, NEXT[c.posture]); else setSelected(null)
+      if (slot?.kind === 'rail' && slot.side === 'w') onPosture(c.id, NEXT[c.posture]); else setSelected(null)
     } else setSelected(c.id)
     setDrag(null)
     void e
@@ -111,7 +115,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
           {/* wind arrow: from the windward side toward the boat */}
           <g transform={`translate(${mastX - 3.4}, 0)`}>
             <line x1={0} y1={-2.55} x2={0} y2={-1.35} stroke="var(--c-sail)" strokeWidth={0.06} markerEnd="url(#arrow-sail)" />
-            <text x={0.18} y={-2.15} className="ml" fontSize={0.34} fill="var(--c-sail)" fontWeight={600} transform={vertical ? 'rotate(-90 0.18 -2.15)' : ''}>WIND</text>
+            <text x={vertical ? 0.55 : 0.18} y={vertical ? -1.9 : -2.15} className="ml" fontSize={0.34} fill="var(--c-sail)" fontWeight={600} textAnchor={vertical ? 'middle' : 'start'} transform={vertical ? 'rotate(-90 0.55 -1.9)' : ''}>WIND</text>
           </g>
           <defs>
             <marker id="arrow-sail" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="var(--c-sail)" /></marker>
@@ -126,17 +130,27 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
           <circle cx={mastX} cy={0} r={0.13} fill="var(--ink)" />
           <text x={mastX} y={0.55} className="ml" fontSize={0.3} textAnchor="middle" transform={vertical ? `rotate(-90 ${mastX} 0.55)` : ''}>mast</text>
           <text x={0.05} y={-0.35} className="ml" fontSize={0.3} transform={vertical ? `rotate(-90 0.05 -0.35)` : ''}>bow</text>
-          <text x={mastX + 2.6} y={vertical ? -2.45 : -2.3} className="ml" fontSize={0.28} textAnchor="middle" transform={vertical ? `rotate(-90 ${mastX + 2.6} -2.45)` : ''}>windward rail</text>
-          <text x={mastX + 2.6} y={vertical ? 2.55 : 2.55} className="ml" fontSize={0.28} textAnchor="middle" transform={vertical ? `rotate(-90 ${mastX + 2.6} 2.55)` : ''}>leeward rail</text>
+          {vertical ? (
+            <>
+              <text x={mastX - 2.6} y={-2.15} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 2.6} -2.15)`}>windward</text>
+              <text x={mastX - 2.6} y={2.15} className="ml" fontSize={0.3} textAnchor="middle" transform={`rotate(-90 ${mastX - 2.6} 2.15)`}>leeward</text>
+            </>
+          ) : (
+            <>
+              <text x={mastX + 2.6} y={-2.3} className="ml" fontSize={0.28} textAnchor="middle">windward rail</text>
+              <text x={mastX + 2.6} y={2.55} className="ml" fontSize={0.28} textAnchor="middle">leeward rail</text>
+            </>
+          )}
           {/* slots */}
           {boat.slots.map((s) => {
             const occ = occupied.has(s.id) && !MULTI.has(s.id)
+            const hideLabel = occ || (MULTI.has(s.id) && occupied.has(s.id))
             const target = dropTarget?.id === s.id
             return (
               <g key={s.id} className="slot" onPointerUp={() => onSlotTap(s)} onClick={() => onSlotTap(s)}>
                 <circle cx={s.x} cy={-s.y} r={target ? 0.42 : 0.3} fill={target ? 'rgba(217,123,26,0.18)' : 'transparent'}
                   stroke={target ? 'var(--c-crew)' : occ ? 'transparent' : 'var(--line-strong)'} strokeWidth={target ? 0.05 : 0.03} strokeDasharray={target ? '' : '0.08 0.08'} />
-                {(s.kind !== 'rail' || s.side === 'w') && !occ && (
+                {(s.kind !== 'rail' || s.side === 'w') && !hideLabel && (
                   <text x={s.x} y={-s.y + (s.kind === 'rail' ? (s.side === 'w' ? -0.42 : 0.62) : 0.1)} className="ml" fontSize={0.24} textAnchor="middle" dominantBaseline={s.kind === 'rail' ? 'auto' : 'middle'} transform={vertical ? `rotate(-90 ${s.x} ${-s.y})` : ''}>
                     {s.kind === 'rail' ? s.label.replace('Rail ', '') : s.label}
                   </text>
@@ -156,7 +170,18 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
             return (
               <g key={c.id} className={`crew${isDrag ? ' dragging' : ''}`} transform={`translate(${x},${-y})`}
                 onPointerDown={onDown(c)} onPointerMove={onMovePtr} onPointerUp={onUp(c)} onPointerCancel={() => setDrag(null)}
-                onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} role="button" tabIndex={0} aria-label={`${c.name}, ${p.slot.label}${rail ? ', ' + POSTURE_LABEL[c.posture] : ''}`}>
+                onPointerEnter={() => onHover(c.id)} onPointerLeave={() => onHover(null)} role="button" tabIndex={0}
+                aria-label={`${c.name}, ${p.slot.label}${rail && p.slot.side === 'w' ? ', ' + POSTURE_LABEL[c.posture] : ''}. Enter: cycle posture, arrows: move along the rail, W/L/B: windward rail, leeward rail, below`}
+                onKeyDown={(e) => {
+                  const rails = boat.slots.filter((x) => x.kind === 'rail' && x.side === p.slot.side)
+                  const idx = rails.findIndex((x) => x.id === c.slot)
+                  if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (rail && p.slot.side === 'w') onPosture(c.id, NEXT[c.posture]) }
+                  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); if (idx > 0) onMove(c.id, rails[idx - 1].id) }
+                  else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); if (idx >= 0 && idx < rails.length - 1) onMove(c.id, rails[idx + 1].id) }
+                  else if (e.key === 'w' || e.key === 'W') onMove(c.id, 'rail-w-4')
+                  else if (e.key === 'l' || e.key === 'L') onMove(c.id, 'rail-l-4')
+                  else if (e.key === 'b' || e.key === 'B') onMove(c.id, 'below')
+                }}>
                 {rail && c.posture !== 'sit' && !isDrag && (
                   <line x1={0} y1={0} x2={0} y2={-Math.sign(p.slot.y) * (c.posture === 'hike' ? 0.55 : 0.32)} stroke="var(--c-crew)" strokeWidth={0.12} strokeLinecap="round" />
                 )}
@@ -168,7 +193,7 @@ export default function DeckPlan({ boat, crew, hover, onHover, onMove, onPosture
         </g>
       </svg>
       <div className="legend">
-        <span>Drag a crew member to a slot · tap to select, tap a slot to move · tap selected rail crew to cycle posture</span>
+        <span>Drag a crew member to a slot · tap to select, then tap a slot · tap a selected windward-rail crew to cycle sitting → legs over → full hike · keyboard: Tab to a crew, arrows/Enter</span>
         {sel && <span><b>{sel.name}</b>: {boat.slotById[sel.slot]?.label}{boat.slotById[sel.slot]?.kind === 'rail' ? ` · ${POSTURE_LABEL[sel.posture]}` : ''}</span>}
       </div>
     </div>

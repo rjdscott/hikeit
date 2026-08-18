@@ -4,8 +4,12 @@ import { useEffect, useRef, useState } from 'react'
 export const scale = (d0: number, d1: number, r0: number, r1: number) => (v: number) => r0 + ((v - d0) / (d1 - d0)) * (r1 - r0)
 
 export function linePath(xs: number[], ys: number[], sx: (v: number) => number, sy: (v: number) => number): string {
-  let d = ''
-  for (let i = 0; i < xs.length; i++) d += (i ? 'L' : 'M') + sx(xs[i]).toFixed(1) + ',' + sy(ys[i]).toFixed(1)
+  let d = '', pen = false
+  for (let i = 0; i < xs.length; i++) {
+    if (!Number.isFinite(ys[i])) { pen = false; continue }
+    d += (pen ? 'L' : 'M') + sx(xs[i]).toFixed(1) + ',' + sy(ys[i]).toFixed(1)
+    pen = true
+  }
   return d
 }
 

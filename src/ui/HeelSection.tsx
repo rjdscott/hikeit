@@ -111,7 +111,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           <text x={gTot.x + 0.22} y={gTot.y - 0.15} className="ml strong" fontSize={0.34} fill="var(--c-hull)">G</text>
           {/* weight ↓ from G, buoyancy ↑ from B */}
           <line x1={gTot.x} y1={gTot.y} x2={gTot.x} y2={gTot.y + fixed} stroke="var(--c-hull)" strokeWidth={0.07} markerEnd="url(#ah-hull)" />
-          <text x={gTot.x + 0.22} y={gTot.y + fixed - 0.05} className="ml num" fontSize={0.32} fill="var(--c-hull)">Δg {fmt((cg.total * G) / 1e3, 0)} kN</text>
+          <text x={gTot.x - 0.15} y={gTot.y + fixed + 0.42} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-hull)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 0.08 }}>Δg {fmt((cg.total * G) / 1e3, 0)} kN</text>
           <circle cx={B.x} cy={B.y} r={0.11} fill="var(--c-buoy)" />
           <text x={B.x + 0.2} y={B.y + 0.42} className="ml strong" fontSize={0.34} fill="var(--c-buoy)">B</text>
           <line x1={B.x} y1={B.y} x2={B.x} y2={B.y - fixed} stroke="var(--c-buoy)" strokeWidth={0.07} markerEnd="url(#ah-buoy)" />
@@ -137,7 +137,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           <path d={`M0,-2.2 A2.2,2.2 0 0 1 ${2.2 * Math.sin(phi)},${-2.2 * Math.cos(phi)}`} fill="none" stroke="var(--ink)" strokeWidth={0.03} />
           <line x1={0} y1={0} x2={0} y2={-2.4} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
           <line x1={0} y1={0} x2={top.x} y2={top.y} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />
-          <text x={2.9 * Math.sin(phi / 2) + 0.15} y={-2.9 * Math.cos(phi / 2)} className="ml strong num" fontSize={0.4}>φ {fmt(phiDeg, 1)}°</text>
+          <text x={-0.25} y={-2.75} className="ml strong num" fontSize={0.4} textAnchor="end">φ {fmt(phiDeg, 1)}°</text>
           {heavy && <text x={0} y={-10.3} textAnchor="middle" fontSize={0.45} fontWeight={700} fill="var(--c-sail)">OVERPOWERED — no static equilibrium: reef or depower</text>}
           <text x={mastTop.x} y={mastTop.y} className="ml" fontSize={0.28} textAnchor="middle" opacity={0}>{' '}</text>
         </g>

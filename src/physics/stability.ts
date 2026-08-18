@@ -29,26 +29,30 @@ export interface CrewInput { id: number; name: string; kg: number; slot: string;
 export function crewPositions(crew: CrewInput[], slotById: Record<string, Slot>): CrewPoint[] {
   return crew.map((c) => {
     const s = slotById[c.slot] ?? Object.values(slotById)[0]
-    const off = s.kind === 'rail' ? POSTURE_OFFSET[c.posture] : 0
-    const y = s.y + Math.sign(s.y) * off
+    // posture (legs over / hiking) only means something on the windward rail
+    const off = s.kind === 'rail' && s.side === 'w' ? POSTURE_OFFSET[c.posture] : 0
+    const y = s.y + off
     // legs-over / hiking drops the CG slightly (torso outboard, hips lower)
-    const z = s.z - (s.kind === 'rail' ? off * 0.25 : 0)
+    const z = s.z - off * 0.25
     return { id: c.id, name: c.name, m: c.kg, y, z }
   })
 }
 
-/** Moment from a single crew member: m·g·(y·cosφ − (z − zG)·sinφ). */
-export const crewMoment = (p: CrewPoint, phi: number, zG: number, zPenalty: boolean) =>
-  p.m * G * (p.y * Math.cos(phi) - (zPenalty ? (p.z - zG) * Math.sin(phi) : 0))
+/**
+ * Moment from moving one crew member from the certificate reference position (centreline, z = zRef)
+ * to (y, z): m·g·(y·cosφ − (z − zRef)·sinφ). The ORC sailing-trim displacement and RM already
+ * contain the default crew on the centreline, so this is a pure weight-shift term.
+ */
+export const crewMoment = (p: CrewPoint, phi: number, zRef: number, zPenalty: boolean) =>
+  p.m * G * (p.y * Math.cos(phi) - (zPenalty ? (p.z - zRef) * Math.sin(phi) : 0))
 
-export const rmCrew = (pts: CrewPoint[], phi: number, zG: number, zPenalty: boolean) =>
-  pts.reduce((a, p) => a + crewMoment(p, phi, zG, zPenalty), 0)
+export const rmCrew = (pts: CrewPoint[], phi: number, zRef: number, zPenalty: boolean) =>
+  pts.reduce((a, p) => a + crewMoment(p, phi, zRef, zPenalty), 0)
 
-/** Combined CG offset of boat + crew, for the "watch G slide to windward" view. */
+/** Combined CG of the boat (crew mass already inside disp) after shifting the crew from the centreline reference. */
 export function combinedCg(b: Boat, pts: CrewPoint[]) {
-  const mc = pts.reduce((a, p) => a + p.m, 0)
-  const total = b.disp + mc
+  const total = b.disp
   const yG = pts.reduce((a, p) => a + p.m * p.y, 0) / total
-  const zG = (b.disp * b.zG + pts.reduce((a, p) => a + p.m * p.z, 0)) / total
+  const zG = b.zG + pts.reduce((a, p) => a + p.m * (p.z - b.zCrew0), 0) / total
   return { yG, zG, total }
 }

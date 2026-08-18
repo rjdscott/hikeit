@@ -13,3 +13,4 @@
 | [0009](0009-lesson-plus-sandbox-format.md) | Dashboard + guided lesson, URL sharing, persistence, light theme |
 
 Format: Title, Status, Date, Context, Decision, Consequences. Research backing these decisions is in [../research](../research/README.md); the approved implementation plan is in [../plans](../plans/).
+- [0010 — Crew moments relative to ORC sailing trim](0010-crew-moments-relative-to-orc-sailing-trim.md) — z₀ = 0.98 m reference, no mass double-count; amends 0005

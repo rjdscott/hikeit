@@ -29,12 +29,12 @@ export default function Advanced({ s, d, dispatch }: { s: State; d: Derived; dis
           <p><b>What this model is.</b> An educational static-equilibrium model, not a VPP or a safety tool.</p>
           <ul style={{ paddingLeft: 18, margin: '4px 0' }}>
             <li>Hull GZ is a 3-parameter curve (GM, AVS, n) fitted to ORC-published stability data — within ~2% to 40° on the reference boat. GM comes from the class-median ORC "RM at 1°" ({BOAT_JSON.stability.rm1} kg·m/°); sisterships vary ±10%.</li>
-            <li>Crew are point masses added to the hull's righting moment; the ~35 mm of extra sinkage from 850 kg is ignored.</li>
+            <li>The ORC sailing displacement and RM already carry the default crew (~930 kg) on the centreline about 1 m above the waterline; crew moments are pure weight shifts from that reference, so the boat's mass is not double-counted.</li>
             <li>Sail force uses ORC-style lift/drag tables vs apparent wind angle, induced drag from rig span, a cos²φ heel reduction, and the ORC "flat" + twist depower model. Heeling arm = CE height + 0.43 × draft.</li>
             <li>Boat speed comes from a seed polar (replace with your ORC polar in <code>xp44.json</code>). No leeway, pitch, waves, gusts or dynamic effects.</li>
-            <li>Rules: RRS 49.2 caps the legal hike (torso outside the upper lifeline only with waist inside the lower one) — that's the "full hike" posture, +0.4 m.</li>
+            <li>Rules: RRS 49.2 — torso inside the lifelines except briefly for a necessary task; on boats with upper and lower lifelines, sitting on deck facing outboard with the waist inside the lower lifeline the upper body may be outside the upper lifeline. That pose is the "full hike" (+0.4 m); "legs over" with the torso inside is always legal.</li>
           </ul>
-          <p>Boat: {BOAT_JSON.name} · LOA {BOAT_JSON.hull.loa} m · beam {BOAT_JSON.hull.beam} m · draft {BOAT_JSON.hull.draft} m · Δ {BOAT_JSON.hull.dispSailing} kg · ballast {BOAT_JSON.hull.ballast} kg · main {BOAT_JSON.sails[0].area} m² · jib {BOAT_JSON.sails[1].area} m². Full sources in <a href="https://github.com/rjdscott/hikeit/tree/main/docs/research">docs/research</a>.</p>
+          <p>Boat: {BOAT_JSON.name} · LOA {BOAT_JSON.hull.loa} m · beam {BOAT_JSON.hull.beam} m · draft {BOAT_JSON.hull.draft} m · Δ {BOAT_JSON.hull.dispSailing} kg · ballast {BOAT_JSON.hull.ballast} kg · main {BOAT_JSON.sails[0].area} m² · jib {BOAT_JSON.sails[1].area} m². Full sources in <a href="https://github.com/rjdscott/hikeit/tree/main/docs/research">docs/research</a>; independent review log in <a href="https://github.com/rjdscott/hikeit/tree/main/docs/reviews">docs/reviews</a>.</p>
         </div>
       </div>
     </details>

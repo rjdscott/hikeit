@@ -54,6 +54,7 @@ export function resolveBoat(json: BoatJson, sailModeId: string, ov: StabilityOve
     avs: (ov.avsDeg ?? json.stability.avsDeg) * DEG,
     n: ov.n ?? json.stability.n,
     zG: json.stability.zG,
+    zCrew0: json.stability.zCrew0,
     draft: json.hull.draft,
     halfbeamAt,
     slots,
@@ -62,7 +63,7 @@ export function resolveBoat(json: BoatJson, sailModeId: string, ov: StabilityOve
     area,
     zce,
     frac: rig.IG / (rig.P + rig.BAS),
-    // ORC: effective span ≈ 1.1 × (mast height above sheer + freeboard)
+    // ORC eq 5.42: effective span = geometric span × 1.1 (eff_span_corr) × kheff(AWA) — kheff applied in aero.sailCoeffs
     hEff: 1.1 * (rig.P + rig.BAS + json.hull.freeboard),
     chScale: ov.chScale ?? 1,
     polar: json.polar,

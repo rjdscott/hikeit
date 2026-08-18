@@ -58,42 +58,42 @@ describe('Xp44 stability defaults', () => {
 })
 
 describe('crew moments', () => {
-  const zG = boat.zG
+  const zG = boat.zCrew0 // reference: ORC default crew on the centreline at 0.98 m
   it('slots exist for 8 rail per side + work + centre', () => {
     expect(boat.slots.filter((s) => s.kind === 'rail' && s.side === 'w')).toHaveLength(8)
     expect(boat.slotById['helm-w']).toBeDefined()
     expect(boat.slotById['below'].y).toBe(0)
     expect(boat.slotById['helm-w'].y).toBeCloseTo(0.7 * boat.halfbeamAt(11.7), 6)
   })
-  it('rail arms are ~1.6–2.1 m; hiking adds 0.4 m; leeward mirrors', () => {
+  it('rail arms are ~1.75–2.05 m sitting; hiking adds 0.4 m; leeward mirrors (no posture offset to leeward)', () => {
     const w = boat.slotById['rail-w-4'], l = boat.slotById['rail-l-4']
-    expect(w.y).toBeGreaterThan(1.6); expect(w.y).toBeLessThan(2.1)
+    expect(w.y).toBeGreaterThan(1.75); expect(w.y).toBeLessThan(2.05)
     expect(l.y).toBeCloseTo(-w.y, 12)
     const [sit] = crewPositions([{ id: 0, name: 'a', kg: 85, slot: 'rail-w-4', posture: 'sit' }], boat.slotById)
     const [hike] = crewPositions([{ id: 0, name: 'a', kg: 85, slot: 'rail-w-4', posture: 'hike' }], boat.slotById)
     expect(hike.y - sit.y).toBeCloseTo(0.4, 12)
     const [lh] = crewPositions([{ id: 0, name: 'a', kg: 85, slot: 'rail-l-4', posture: 'hike' }], boat.slotById)
-    expect(lh.y).toBeCloseTo(-hike.y, 12)
+    expect(lh.y).toBeCloseTo(-sit.y, 12) // nobody hikes to leeward
     // posture ignored off the rail
     const [helmHike] = crewPositions([{ id: 0, name: 'a', kg: 85, slot: 'helm-w', posture: 'hike' }], boat.slotById)
     expect(helmHike.y).toBeCloseTo(boat.slotById['helm-w'].y, 12)
   })
-  it('10 × 85 kg hiked ≈ +11–13 kN·m at 20°, ORC-style (no z) larger, leeward negative, centreline ≤ 0', () => {
+  it('10 × 85 kg hiked ≈ +13.5–16.5 kN·m at 20°, ORC-style (no z) larger, leeward negative, below decks slightly positive (lower than cert crew)', () => {
     const pts = crewPositions(railHike, boat.slotById)
     const withZ = rmCrew(pts, 20 * DEG, zG, true) / 1e3
     const noZ = rmCrew(pts, 20 * DEG, zG, false) / 1e3
-    expect(withZ).toBeGreaterThan(10.5); expect(withZ).toBeLessThan(13.5)
+    expect(withZ).toBeGreaterThan(13.5); expect(withZ).toBeLessThan(16.5)
     expect(noZ).toBeGreaterThan(withZ)
     const lee = crewPositions(crew((i) => `rail-l-${i % 8}`, 'hike'), boat.slotById)
     expect(rmCrew(lee, 20 * DEG, zG, true)).toBeLessThan(0)
-    expect(rmCrew(crewPositions(allBelow, boat.slotById), 20 * DEG, zG, true)).toBeLessThanOrEqual(0)
+    expect(rmCrew(crewPositions(allBelow, boat.slotById), 20 * DEG, zG, true)).toBeGreaterThan(0)
   })
-  it('crew contribution crosses zero near arctan(y/(z−zG)) ≈ 55°', () => {
+  it('crew contribution crosses zero near arctan(y/(z−zCrew0)) ≈ 75–82° — beyond the sailing range', () => {
     const [p] = crewPositions([{ id: 0, name: 'a', kg: 85, slot: 'rail-w-4', posture: 'hike' }], boat.slotById)
     const brk = Math.atan(p.y / (p.z - zG))
     expect(rmCrew([p], brk - 0.01, zG, true)).toBeGreaterThan(0)
     expect(rmCrew([p], brk + 0.01, zG, true)).toBeLessThan(0)
-    expect(brk / DEG).toBeGreaterThan(50); expect(brk / DEG).toBeLessThan(60)
+    expect(brk / DEG).toBeGreaterThan(74); expect(brk / DEG).toBeLessThan(83)
   })
 })
 
@@ -102,8 +102,8 @@ describe('aero', () => {
     const w = apparentWind(10, 90, 7)
     expect(w.aws).toBeCloseTo(12.21, 1); expect(w.awa).toBeCloseTo(55, 0)
   })
-  it('polar seed: upwind 12 kn ≈ 7 kn boat speed, clamps outside grid', () => {
-    expect(boatSpeed(json.polar, 12, 40)).toBeCloseTo(7.0, 1)
+  it('polar seed: upwind 12 kn ≈ 7.3 kn boat speed, clamps outside grid', () => {
+    expect(boatSpeed(json.polar, 12, 40)).toBeCloseTo(7.3, 1)
     expect(boatSpeed(json.polar, 100, 40)).toBe(boatSpeed(json.polar, 30, 40))
   })
   it('C_H upwind at full power ≈ 1.35 (β≈27°) and drops well below on a beam reach', () => {
@@ -129,7 +129,7 @@ describe('aero', () => {
 })
 
 describe('equilibrium', () => {
-  it('hiked crew heel less than all-below, ~4–6° at 12 kn full power', () => {
+  it('hiked crew heel less than all-below by ~3–8° at 12 kn full power', () => {
     const a = equilibrium(model(railHike, 12)), b = equilibrium(model(allBelow, 12))
     expect(a.overpowered).toBe(false); expect(b.overpowered).toBe(false)
     const d = (b.phi - a.phi) / DEG
@@ -141,7 +141,7 @@ describe('equilibrium', () => {
     const e = equilibrium(m)
     const c = curves(m)
     expect(c.phi).toHaveLength(91)
-    const rmAt = rmHull(boat, e.phi) + rmCrew(m.crew, e.phi, boat.zG, true)
+    const rmAt = rmHull(boat, e.phi) + rmCrew(m.crew, e.phi, boat.zCrew0, true)
     expect(Math.abs(rmAt - heelingMoment(boat, m.wind, 1, e.phi)) / rmAt).toBeLessThan(1e-6)
   })
   it('overpowered at 30 kn, full power, crew below', () => {

@@ -41,7 +41,7 @@ export function MomentChart({ d, hover }: { d: Derived; hover: number | null }) 
   const band = linePath(phi, hull, sx, sy) + linePath([...phi].reverse(), [...tot].reverse(), sx, sy).replace('M', 'L') + 'Z'
   const eqX = d.phiDeg, eqY = d.rmTotalEq / 1e3
   const hov = hover !== null ? d.perCrew.find((p) => p.id === hover) : null
-  const hovLine = hov ? phi.map((deg, i) => hull[i] + crewMoment(hov, deg * DEG, d.boat.zG, d.zPenalty) / 1e3) : null
+  const hovLine = hov ? phi.map((deg, i) => hull[i] + crewMoment(hov, deg * DEG, d.boat.zCrew0, d.zPenalty) / 1e3) : null
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - r.left) / r.width) * w
@@ -66,7 +66,7 @@ export function MomentChart({ d, hover }: { d: Derived; hover: number | null }) 
             <g>
               <line x1={sx(eqX)} x2={sx(eqX)} y1={sy(0)} y2={sy(eqY)} stroke="var(--c-eq)" strokeWidth={1} strokeDasharray="3 3" />
               <circle cx={sx(eqX)} cy={sy(eqY)} r={5.5} fill="var(--c-eq)" stroke="#fff" strokeWidth={2} />
-              <text x={sx(eqX) + 8} y={sy(eqY) - 8} fontSize={12} fontWeight={600} fill="var(--c-eq)" className="num">φ = {fmt(eqX, 1)}°</text>
+              <text x={sx(eqX) + 6} y={H - M.b - 8} fontSize={12} fontWeight={600} fill="var(--c-eq)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>φ = {fmt(eqX, 1)}°</text>
             </g>
           )}
           {d.eq.overpowered && <text x={w - M.r - 4} y={M.t + 14} textAnchor="end" fontSize={12} fontWeight={600} fill="var(--c-sail)">Overpowered — HM above max RM</text>}
@@ -105,8 +105,13 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
   const yMax = 50
   const xs = d.sweep.map((p) => p.tws)
   const sx = scale(4, 30, M.l, w - M.r), sy = scale(-5, yMax, H - M.b, M.t)
-  const deg = (p: { phi: number; overpowered: boolean }) => (p.overpowered ? yMax : Math.min(yMax, p.phi / DEG))
+  const deg = (p: { phi: number; overpowered: boolean }) => (p.overpowered ? NaN : Math.min(yMax, p.phi / DEG))
   const cur = d.sweep.map(deg), base = d.sweepBase.map(deg)
+  const overFrom = d.sweep.find((p) => p.overpowered)?.tws ?? null
+  const overFromBase = d.sweepBase.find((p) => p.overpowered)?.tws ?? null
+  const ta = xs.map((_, i) => i).find((i) => cur[i] >= targetHeel), tb = xs.map((_, i) => i).find((i) => base[i] >= targetHeel)
+  const lerpX = (arr: number[], i: number | undefined) => (i === undefined || i === 0 ? null : xs[i - 1] + ((targetHeel - arr[i - 1]) / (arr[i] - arr[i - 1] || 1)) * (xs[i] - xs[i - 1]))
+  const xa = lerpX(cur, ta), xb = lerpX(base, tb)
   const onMove = (e: React.PointerEvent<SVGSVGElement>) => {
     const r = e.currentTarget.getBoundingClientRect()
     const x = ((e.clientX - r.left) / r.width) * w
@@ -118,23 +123,37 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
   return (
     <div ref={ref}>
       <svg width="100%" viewBox={`0 0 ${w} ${H}`} style={{ display: 'block' }} onPointerMove={onMove} onPointerLeave={() => setHx(null)} aria-label="Equilibrium heel versus true wind speed">
+        <defs><pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="var(--c-sail)" strokeWidth="1" opacity="0.35" /></pattern></defs>
         <Frame w={w} xTicks={niceTicks(4, 30, 7)} yTicks={niceTicks(-5, yMax, 6)} sx={sx} sy={sy} xLabel="true wind speed (kn)" yLabel="equilibrium heel (°)">
           <line x1={M.l} x2={w - M.r} y1={sy(targetHeel)} y2={sy(targetHeel)} stroke="var(--ink)" strokeWidth={1} strokeDasharray="2 4" />
           <text x={w - M.r - 4} y={sy(targetHeel) - 5} textAnchor="end" fontSize={11} fill="var(--muted)">target heel {targetHeel}°</text>
           <line x1={sx(tws)} x2={sx(tws)} y1={M.t} y2={H - M.b} stroke="var(--line-strong)" strokeWidth={1} strokeDasharray="4 3" />
+          {overFrom !== null && (
+            <g>
+              <rect x={sx(overFrom)} y={M.t} width={Math.max(0, w - M.r - sx(overFrom))} height={H - M.b - M.t} fill="url(#hatch)" opacity={0.6} />
+              <text x={sx(overFrom) + 6} y={M.t + 14} fontSize={11} fill="var(--c-sail)" fontWeight={600}>overpowered →</text>
+            </g>
+          )}
+          {overFromBase !== null && overFrom !== null && overFromBase < overFrom && <line x1={sx(overFromBase)} x2={sx(overFromBase)} y1={M.t} y2={H - M.b} stroke="var(--c-ghost)" strokeDasharray="3 3" />}
           <path d={linePath(xs, base, sx, sy)} fill="none" stroke="var(--c-ghost)" strokeWidth={2} strokeDasharray="5 4" />
           <path d={linePath(xs, cur, sx, sy)} fill="none" stroke="var(--c-crew)" strokeWidth={2.4} />
+          {xa !== null && xb !== null && (
+            <g>
+              <line x1={sx(xb)} x2={sx(xa)} y1={sy(targetHeel)} y2={sy(targetHeel)} stroke="var(--c-crew)" strokeWidth={4} strokeLinecap="round" />
+              <circle cx={sx(xb)} cy={sy(targetHeel)} r={3.5} fill="var(--c-ghost)" /><circle cx={sx(xa)} cy={sy(targetHeel)} r={3.5} fill="var(--c-crew)" />
+            </g>
+          )}
           {fw !== null && (
             <g>
-              <text x={M.l + 8} y={M.t + 16} fontSize={12.5} fontWeight={600} fill="var(--c-crew)" className="num">free wind: {fw >= 0 ? '+' : ''}{fmt(fw, 1)} kn</text>
-              <text x={M.l + 8} y={M.t + 31} fontSize={11} fill="var(--muted)">extra TWS at {targetHeel}° heel vs. all crew inboard</text>
+              <text x={w - M.r - 4} y={H - M.b - 22} textAnchor="end" fontSize={12.5} fontWeight={600} fill="var(--c-crew)" className="num" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>free wind: {fw >= 0 ? '+' : ''}{fmt(fw, 1)} kn</text>
+              <text x={w - M.r - 4} y={H - M.b - 8} textAnchor="end" fontSize={11} fill="var(--muted)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 3 }}>extra TWS at {targetHeel}° heel vs. all crew inboard</text>
             </g>
           )}
           {i !== null && (
             <g>
               <line x1={sx(hx!)} x2={sx(hx!)} y1={M.t} y2={H - M.b} stroke="var(--line-strong)" strokeWidth={1} />
-              <circle cx={sx(hx!)} cy={sy(cur[i])} r={3.5} fill="var(--c-crew)" stroke="#fff" strokeWidth={1.5} />
-              <circle cx={sx(hx!)} cy={sy(base[i])} r={3.5} fill="var(--c-ghost)" stroke="#fff" strokeWidth={1.5} />
+              {!Number.isNaN(cur[i]) && <circle cx={sx(hx!)} cy={sy(cur[i])} r={3.5} fill="var(--c-crew)" stroke="#fff" strokeWidth={1.5} />}
+              {!Number.isNaN(base[i]) && <circle cx={sx(hx!)} cy={sy(base[i])} r={3.5} fill="var(--c-ghost)" stroke="#fff" strokeWidth={1.5} />}
               <g transform={`translate(${sx(hx!) + (hx! > 20 ? -150 : 12)}, ${H - M.b - 66})`}>
                 <rect width={140} height={50} rx={6} fill="#fff" stroke="var(--line)" />
                 <text x={8} y={16} fontSize={11} fill="var(--muted)">TWS {hx} kn</text>
@@ -148,7 +167,7 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
       <div className="legend">
         <span><i className="sw" style={{ background: 'var(--c-crew)' }} />this formation</span>
         <span><i className="sw dash" style={{ color: 'var(--c-ghost)' }} />all crew inboard (centreline)</span>
-        <span className="muted">at current sail power (flat = {fmt(d.flat, 2)}); capped at {yMax}° when overpowered</span>
+        <span className="muted">at current sail power (flat = {fmt(d.flat, 2)}); hatched = no static equilibrium (overpowered)</span>
       </div>
     </div>
   )
