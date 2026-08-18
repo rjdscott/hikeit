@@ -150,8 +150,8 @@ export default function DeckPlan({ boat, crew, ghostCrew, hover, selected, onSel
             </>
           ) : (
             <>
-              <text x={mastX + 2.6} y={-2.5} className="ml" fontSize={0.28} textAnchor="middle">windward rail</text>
-              <text x={mastX + 2.6} y={2.55} className="ml" fontSize={0.28} textAnchor="middle">leeward rail</text>
+              <text x={mastX - 1.3} y={-2.1} className="ml" fontSize={0.28} textAnchor="middle">windward rail</text>
+              <text x={mastX - 1.3} y={2.3} className="ml" fontSize={0.28} textAnchor="middle">leeward rail</text>
             </>
           )}
           {/* slots */}

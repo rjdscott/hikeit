@@ -16,6 +16,7 @@ export interface State {
   zPenalty: boolean
   overrides: { gm?: number; avsDeg?: number; n?: number; chScale?: number }
   lessonStep: number | null
+  present: boolean // presenter mode: big type, essentials only
   pinned: Snapshot | null // formation A for side-by-side comparison
 }
 
@@ -62,6 +63,7 @@ export const initialState = (): State => ({
   zPenalty: true,
   overrides: {},
   lessonStep: null,
+  present: false,
   pinned: null,
 })
 
@@ -111,6 +113,7 @@ export function encodeHash(s: State): string {
     sm: s.sailMode, z: s.zPenalty ? '1' : '0', ta: s.targetAngle ? '1' : '0', crew,
   })
   if (s.lessonStep !== null) p.set('step', String(s.lessonStep))
+  if (s.present) p.set('present', '1')
   return '#' + p.toString()
 }
 
@@ -128,6 +131,7 @@ export function decodeHash(hash: string, base: State, validSlots: Record<string,
     zPenalty: p.has('z') ? p.get('z') !== '0' : base.zPenalty,
     targetAngle: p.has('ta') ? p.get('ta') === '1' : base.targetAngle,
     lessonStep: p.has('step') ? num('step', 0, 0, 20) : null,
+    present: p.get('present') === '1',
   }
   const crewStr = p.get('crew')
   if (crewStr) {

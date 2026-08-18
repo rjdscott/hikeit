@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LESSONS, lessonStateAt } from '../data/lessons'
 import { derive, type Derived } from '../model'
 import type { Action, State } from '../state'
@@ -41,6 +41,15 @@ export default function Lesson({ s, d, dispatch }: { s: State; d: Derived; dispa
     setResults(next); try { localStorage.setItem(LS, JSON.stringify(next)) } catch { /* ignore */ }
     setPending(null); goDirect(pending.step)
   }
+  useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'ArrowRight') { e.preventDefault(); if (pending) { if (pending.guess !== null) reveal() } else go(i + 1) }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); if (pending) setPending(null); else go(i - 1) }
+    }
+    addEventListener('keydown', k); return () => removeEventListener('keydown', k)
+  })
   const result = results.find((r) => r.step === i)
   const q = pending ? LESSONS[pending.step].quiz! : null
   const score = results.filter((r) => LESSONS[r.step]?.quiz && Math.abs(r.guess - r.answer) <= (LESSONS[r.step].quiz!.max - LESSONS[r.step].quiz!.min) * 0.15).length

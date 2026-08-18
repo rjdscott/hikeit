@@ -59,6 +59,14 @@ function App() {
     return () => clearTimeout(t)
   }, [s])
   useEffect(() => {
+    const k = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (e.metaKey || e.ctrlKey || e.altKey || tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return
+      if (e.key === 'p' || e.key === 'P') dispatch({ type: 'patch', patch: { present: !sRef.current.present } })
+    }
+    addEventListener('keydown', k); return () => removeEventListener('keydown', k)
+  }, [])
+  useEffect(() => {
     const on = () => { if (location.hash !== encodeHash(sRef.current)) dispatch({ type: 'patch', patch: fromHash(location.hash, sRef.current) }) }
     addEventListener('hashchange', on)
     return () => removeEventListener('hashchange', on)
@@ -72,7 +80,7 @@ function App() {
   const startLesson = () => dispatch({ type: 'lesson', step: 0, patch: lessonStateAt(s, 0) })
 
   return (
-    <div className="app">
+    <div className={`app${s.present ? ' present' : ''}`}>
       <header className="header">
         <div>
           <h1>hikeit <span className="muted" style={{ fontWeight: 400 }}>— crew weight & righting moment</span></h1>
@@ -81,6 +89,7 @@ function App() {
         <div className="actions">
           {s.lessonStep === null ? <button className="btn primary" onClick={startLesson}>Start the lesson</button> : <span className="small muted">Lesson mode — every control stays live</span>}
           <button className="btn" onClick={share}>{copied ? 'Link copied ✓' : 'Share this scenario'}</button>
+          <button className="btn" onClick={() => dispatch({ type: 'patch', patch: { present: !s.present } })} title="Presenter mode: bigger type, essentials only (P)">{s.present ? 'Exit presenter' : 'Present'}</button>
         </div>
       </header>
 
