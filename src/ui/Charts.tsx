@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { memo, useState } from 'react'
 import type { Derived } from '../model'
 import { DEG } from '../physics/types'
 import { crewMoment } from '../physics/stability'
@@ -26,7 +26,7 @@ function Frame({ w, xTicks, yTicks, sx, sy, xLabel, yLabel, children }: {
 }
 
 /** Righting vs heeling moment against heel angle; the crossing is the equilibrium. */
-export function MomentChart({ d, hover }: { d: Derived; hover: number | null }) {
+export const MomentChart = memo(function MomentChart({ d, hover }: { d: Derived; hover: number | null }) {
   const [ref, w] = useWidth<HTMLDivElement>()
   const [hx, setHx] = useState<number | null>(null)
   const { curves: c, ghost } = d
@@ -96,10 +96,10 @@ export function MomentChart({ d, hover }: { d: Derived; hover: number | null }) 
       </div>
     </div>
   )
-}
+})
 
 /** Equilibrium heel vs true wind: current formation vs everyone inboard. */
-export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number; targetHeel: number }) {
+export const WindSweepChart = memo(function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number; targetHeel: number }) {
   const [ref, w] = useWidth<HTMLDivElement>()
   const [hx, setHx] = useState<number | null>(null)
   const yMax = 50
@@ -169,4 +169,4 @@ export function WindSweepChart({ d, tws, targetHeel }: { d: Derived; tws: number
       </div>
     </div>
   )
-}
+})

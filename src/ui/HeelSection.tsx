@@ -2,13 +2,21 @@ import { useMemo } from 'react'
 import type { Derived } from '../model'
 import { DEG, G } from '../physics/types'
 import { fmt } from './svg'
+import { rmCrew, rmHull } from '../physics/stability'
+import { apparentWind, heelForce, heelingMoment } from '../physics/aero'
 import { Figure } from './Figure'
 
-interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null }
+interface Props { d: Derived; hover: number | null; railPosture: 'sit' | 'legs' | 'hike' | null; dyn?: { phi: number; tws: number } | null }
 
-export default function HeelSection({ d, hover, railPosture }: Props) {
-  const { boat, phiDeg, crewPts, cg, eq } = d
-  const phi = eq.phi
+export default function HeelSection({ d, hover, railPosture, dyn }: Props) {
+  const { boat, crewPts, cg, eq } = d
+  const phi = dyn ? dyn.phi : eq.phi
+  const phiDeg = phi / DEG
+  // during a puff, moments are evaluated at the instantaneous heel and gust wind
+  const windNow = dyn ? apparentWind(dyn.tws, d.wind.twa, d.wind.bsp) : d.wind
+  const rmTotalNow = dyn ? rmHull(boat, phi) + rmCrew(crewPts, phi, boat.zCrew0, d.zPenalty) : d.rmTotalEq
+  const hmNow = dyn ? heelingMoment(boat, windNow, d.flat, phi) : d.hmEq
+  const fhNow = dyn ? heelForce(boat, windNow, d.flat, phi) : d.heelForceEq
   const hull = boat.json.hull
   const half = hull.section
   const secPath = useMemo(() => {
@@ -25,7 +33,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
   const S = (y: number, z: number) => ({ x: -y * cos + z * sin, y: -(y * sin + z * cos) })
   const gTot = S(cg.yG, cg.zG)
   const gBoat = S(0, boat.zG)
-  const gzTot = d.rmTotalEq / (cg.total * G) // effective righting arm incl. crew
+  const gzTot = rmTotalNow / (cg.total * G) // effective righting arm incl. crew
   const B = { x: gTot.x + gzTot, y: 0.45 } // buoyancy acts on the vertical that gives GZ_total
   const ce = S(0, zce), clr = S(0, zclr)
   const top = S(0, deckZ), mastTop = S(0, 10.6)
@@ -34,7 +42,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
   const xMax = Math.max(5.6, ce.x + fixedS + 1.7)
   const vb = { x0: -5.6, y0: -10.9, w: 5.6 + xMax, h: 14.3 }
   const dimX = xMax - 0.3 // heeling-arm dimension line
-  const heavy = eq.overpowered
+  const heavy = eq.overpowered && !dyn
 
   return (
     <div>
@@ -88,11 +96,11 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           <line x1={gTot.x} y1={gTot.y} x2={gTot.x} y2={3.0} stroke="var(--c-hull)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={B.x} y1={B.y} x2={B.x} y2={3.0} stroke="var(--c-buoy)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={gTot.x} y1={2.9} x2={B.x} y2={2.9} stroke="var(--ink)" strokeWidth={0.04} />
-          <text x={(gTot.x + B.x) / 2} y={3.35} className="ml strong num" fontSize={0.34} textAnchor="middle">GZ {fmt(gzTot, 2)} m → RM {fmt(d.rmTotalEq / 1e3, 1)} kN·m</text>
+          <text x={(gTot.x + B.x) / 2} y={3.35} className="ml strong num" fontSize={0.34} textAnchor="middle">GZ {fmt(gzTot, 2)} m → RM {fmt(rmTotalNow / 1e3, 1)} kN·m</text>
           {/* sail force at CE (leeward), hydro force at CLR (windward) */}
           <circle cx={ce.x} cy={ce.y} r={0.1} fill="var(--c-sail)" />
           <line x1={ce.x} y1={ce.y} x2={ce.x + fixedS} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
-          <text x={ce.x + 0.25} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 0.08 }}>F_H {fmt(d.heelForceEq / 1e3, 1)} kN</text>
+          <text x={ce.x + 0.25} y={ce.y + 0.5} className="ml num" fontSize={0.32} fill="var(--c-sail)" style={{ paintOrder: 'stroke', stroke: '#fff', strokeWidth: 0.08 }}>F_H {fmt(fhNow / 1e3, 1)} kN</text>
           <text x={ce.x - 0.2} y={ce.y + 0.12} className="ml" fontSize={0.3} textAnchor="end" fill="var(--c-sail)">CE</text>
           <circle cx={clr.x} cy={clr.y} r={0.1} fill="var(--c-sail)" />
           <line x1={clr.x} y1={clr.y} x2={clr.x - fixedS} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.07} markerEnd="url(#ah-sail)" />
@@ -101,7 +109,7 @@ export default function HeelSection({ d, hover, railPosture }: Props) {
           <line x1={ce.x} y1={ce.y} x2={dimX + 0.1} y2={ce.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={clr.x} y1={clr.y} x2={dimX + 0.1} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.02} strokeDasharray="0.12 0.1" />
           <line x1={dimX} y1={ce.y} x2={dimX} y2={clr.y} stroke="var(--c-sail)" strokeWidth={0.04} />
-          <text x={dimX - 0.15} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-sail)" transform={`rotate(-90 ${dimX - 0.15} ${(ce.y + clr.y) / 2})`}>h·cosφ = {fmt(d.arm * cos, 1)} m (h {fmt(d.arm, 1)} m) → HM {fmt(d.hmEq / 1e3, 1)} kN·m</text>
+          <text x={dimX - 0.15} y={(ce.y + clr.y) / 2} className="ml num" fontSize={0.32} textAnchor="middle" fill="var(--c-sail)" transform={`rotate(-90 ${dimX - 0.15} ${(ce.y + clr.y) / 2})`}>h·cosφ = {fmt(d.arm * cos, 1)} m (h {fmt(d.arm, 1)} m) → HM {fmt(hmNow / 1e3, 1)} kN·m</text>
           {/* heel angle arc */}
           <path d={`M0,-2.2 A2.2,2.2 0 0 1 ${2.2 * Math.sin(phi)},${-2.2 * Math.cos(phi)}`} fill="none" stroke="var(--ink)" strokeWidth={0.03} />
           <line x1={0} y1={0} x2={0} y2={-2.4} stroke="var(--ink)" strokeWidth={0.02} strokeDasharray="0.1 0.1" />

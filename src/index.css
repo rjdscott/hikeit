@@ -41,6 +41,7 @@ button { cursor: pointer; }
   "deck section"
   "stats section"
   "controls readouts"
+  "puff puff"
   "compare compare"
   "posture posture"
   "moment sweep"
@@ -62,7 +63,7 @@ button { cursor: pointer; }
   .app { padding: 10px; }
   .mob-hide { display: none; }
   table.tbl input:not([type=number]) { max-width: 6.5em; }
-  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "compare" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
+  .grid { grid-template-columns: 1fr; grid-template-areas: "lesson" "deck" "stats" "controls" "puff" "compare" "posture" "section" "readouts" "moment" "sweep" "eq" "advanced"; }
 }
 
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px; }
@@ -189,6 +190,7 @@ details summary { cursor: pointer; color: var(--muted); font-size: 0.9rem; }
 .cmp-row .d.good { color: #1a7f4b; font-weight: 600; }
 .cmp-row .d.bad { color: var(--c-sail); font-weight: 600; }
 .area-compare { grid-area: compare; }
+.area-puff { grid-area: puff; }
 
 /* ---- quiz ---- */
 .quiz { background: #fff7ee; border: 1px solid #f3d9b8; border-radius: 10px; padding: 10px 12px; }

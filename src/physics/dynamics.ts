@@ -1,0 +1,51 @@
+import type { Boat, CrewPoint } from './types'
+import { G } from './types'
+import { rmCrew, rmHull } from './stability'
+import { apparentWind, heelingMoment } from './aero'
+import { equilibrium } from './solve'
+
+export interface RollParams {
+  inertia: number // kg·m², roll inertia incl. added mass (rig + keel + hull + entrained water)
+  zeta: number // damping ratio (keel + sails ≈ 0.3–0.5)
+}
+/** Roll inertia ≈ Δ·k² with k ≈ 0.6·B/2 … tuned so T_roll ≈ 4 s for the Xp 44 (typical 40–45 ft: 3–5 s). */
+export const defaultRoll = (b: Boat): RollParams => ({ inertia: 6.2 * b.disp, zeta: 0.35 })
+
+export const rollPeriod = (b: Boat, p: RollParams) => 2 * Math.PI * Math.sqrt(p.inertia / (b.disp * G * b.gm))
+
+/** Gust profile: ramp up, hold, ramp down (kn above base). */
+export const puffProfile = (t: number, dTws: number, up = 1.5, hold = 5, down = 2.5) =>
+  t < 0 ? 0 : t < up ? (dTws * t) / up : t < up + hold ? dTws : t < up + hold + down ? dTws * (1 - (t - up - hold) / down) : 0
+
+export interface Trajectory { t: number[]; phi: number[]; tws: number[]; phiStaticPuff: number; phiStaticBase: number; peak: number; peakT: number }
+
+/**
+ * Integrate I·φ̈ = HM(φ, V(t)) − RM_total(φ) − c·φ̇ (φ positive to leeward) from the base equilibrium through a puff.
+ * Semi-implicit Euler at dt; sails/trim/crew held fixed (the crew's reaction is what the lesson is about).
+ */
+export function simulatePuff(
+  boat: Boat, crew: CrewPoint[], zPenalty: boolean, flat: number,
+  tws: number, twa: number, bsp: number, dTws: number,
+  params: RollParams = defaultRoll(boat), duration = 14, dt = 1 / 60,
+): Trajectory {
+  const wind0 = apparentWind(tws, twa, bsp)
+  const eq0 = equilibrium({ boat, crew, wind: wind0, flat, zPenalty })
+  const eqP = equilibrium({ boat, crew, wind: apparentWind(tws + dTws, twa, bsp), flat, zPenalty })
+  const K = boat.disp * G * boat.gm
+  const c = 2 * params.zeta * Math.sqrt(params.inertia * K)
+  let phi = eq0.phi, omega = 0, peak = phi, peakT = 0
+  const out: Trajectory = { t: [], phi: [], tws: [], phiStaticPuff: eqP.phi, phiStaticBase: eq0.phi, peak, peakT }
+  const n = Math.round(duration / dt)
+  for (let i = 0; i <= n; i++) {
+    const t = i * dt
+    const v = tws + puffProfile(t - 1, dTws) // puff starts at t = 1 s
+    const w = apparentWind(v, twa, bsp)
+    const M = heelingMoment(boat, w, flat, phi) - rmHull(boat, phi) - rmCrew(crew, phi, boat.zCrew0, zPenalty) - c * omega
+    omega += (M / params.inertia) * dt
+    phi += omega * dt
+    if (phi > peak) { peak = phi; peakT = t }
+    if (i % 2 === 0) { out.t.push(t); out.phi.push(phi); out.tws.push(v) } // 30 Hz samples
+  }
+  out.peak = peak; out.peakT = peakT
+  return out
+}
